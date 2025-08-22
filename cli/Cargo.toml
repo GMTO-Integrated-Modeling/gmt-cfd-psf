@@ -1,0 +1,12 @@
+[package]
+name = "gmt-cfd-psf-cli"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow.workspace = true
+clap = { version = "4.5.45", features = ["derive"] }
+env_logger = "0.11.8"
+indicatif.workspace = true
+parse-monitors = { git = "https://github.com/rconan/parse-monitors.git", branch = "cfd2025", version = "0.3.2" }
+psf = { version = "0.1.0", path = "..", package = "gmt-cfd-psf" }
