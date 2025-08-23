@@ -107,7 +107,7 @@ impl PSFs {
     /// # Parameters
     ///
     /// - `psf` - Raw PSF intensity data as flat vector (DETECTOR_SIZE²)
-    pub fn push(&mut self, psf: PSF  ) {
+    pub fn push(&mut self, psf: PSF) {
         let i = self.psfs.len();
         self.psfs.push(psf.frame_number(i));
     }
@@ -145,7 +145,7 @@ impl PSFs {
     /// # Returns
     ///
     /// Result indicating success or failure of the batch export operation
-    pub fn save_all_frames(&self) -> Result<(), PSFsError> {
+    pub fn save_all_frames(&self, path: impl AsRef<Path>) -> Result<(), PSFsError> {
         let frames: Vec<_> = self.psfs.iter().map(|psf| psf.frame.as_slice()).collect();
         let global_minmax = find_global_extrema(&frames);
         let n_frame = self.psfs.len();
@@ -161,7 +161,7 @@ impl PSFs {
         save_pb.set_message("Saving frames");
 
         // Setup output directory
-        let frames_dir = Path::new("frames");
+        let frames_dir = Path::new(path.as_ref());
         create_dir_all(frames_dir)
             .map_err(|e| PSFsError::CreateFrameDir(e, frames_dir.to_path_buf()))?;
 

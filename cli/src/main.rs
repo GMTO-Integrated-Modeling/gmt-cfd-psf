@@ -204,7 +204,7 @@ fn main() -> anyhow::Result<()> {
     let frame_count = psfs.len();
 
     // Save all turbulence frames with consistent normalization
-    psfs.save_all_frames()?;
+    psfs.save_all_frames("frames")?;
     psfs.sum().save("long_exposure_psf.png")?;
 
     println!();
