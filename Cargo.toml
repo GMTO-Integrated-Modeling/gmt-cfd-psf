@@ -26,6 +26,14 @@ anyhow = "1.0.99"
 indicatif = "0.18.0"
 parse-monitors = { git = "https://github.com/rconan/parse-monitors.git", branch = "cfd2025", version = "0.3.2" }
 
+# Defines a size-optimized profile for the WASM bundle in release mode
+[profile.wasm-release]
+inherits = "release"
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = "abort"
+
 [patch.crates-io]
 crseo = { path = "/home/rconan/projects/crseo" }
 crseo-sys = { path = "/home/rconan/projects/crseo/sys" }

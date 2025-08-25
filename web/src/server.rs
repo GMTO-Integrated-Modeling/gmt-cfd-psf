@@ -28,8 +28,6 @@ pub mod api {
         let config = req.config.clone();
         let session_id = req.session_id.clone();
 
-        println!("generate psf");
-
         // Validate that at least one turbulence effect is selected
         if !config.domeseeing && !config.windloads {
             return Ok(HttpResponse::BadRequest().json(GenerationStatus {
