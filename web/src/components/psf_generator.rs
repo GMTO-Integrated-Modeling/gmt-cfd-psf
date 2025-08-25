@@ -1,9 +1,11 @@
-use gloo_net::http::Request;
 use leptos::{prelude::*, task::spawn_local};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::components::form_controls::{ConfigForm, PsfConfig};
+use crate::{
+    components::form_controls::{ConfigForm, PsfConfig},
+    server::psf_generation,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenerationStatus {
@@ -44,18 +46,35 @@ pub fn PsfGenerator() -> impl IntoView {
         let config_value = config.get();
         let session_id = Uuid::new_v4().to_string();
 
+        // Validate that at least one turbulence effect is selected
+        if !config_value.domeseeing && !config_value.windloads {
+            generation_status.set(GenerationStatus {
+                session_id,
+                status: ProcessingStatus::Error,
+                message:
+                    "At least one turbulence effect (dome seeing or wind loads) must be selected"
+                        .to_string(),
+                progress: None,
+                images: Vec::new(),
+            });
+            return;
+        }
+
         // First set a visible status to confirm button click worked
         generation_status.set(GenerationStatus {
             session_id: session_id.clone(),
             status: ProcessingStatus::Processing,
-            message: "Button clicked! Sending request...".to_string(),
+            message: "PSF generation started".to_string(),
             progress: Some(0.0),
             images: Vec::new(),
         });
 
         spawn_local(async move {
-            match generate_psf_request(config_value, session_id.clone()).await {
-                Ok(status) => generation_status.set(status),
+            match psf_generation(config_value, session_id.clone()).await {
+                Ok(images) => {
+                    generation_status.write().images = images;
+                    generation_status.write().status = ProcessingStatus::Complete;
+                }
                 Err(e) => generation_status.set(GenerationStatus {
                     session_id,
                     status: ProcessingStatus::Error,
@@ -77,37 +96,6 @@ pub fn PsfGenerator() -> impl IntoView {
         </div>
     }
 }
-
-async fn generate_psf_request(
-    config: PsfConfig,
-    session_id: String,
-) -> Result<GenerationStatus, String> {
-    leptos::logging::log!("generate_psf_request called with config: {:?}", &config);
-    println!("generate psf request");
-    let response = Request::post("/api/generate")
-        .header("Content-Type", "application/json") // Explicit header
-        .json(&serde_json::json!({
-            "config": config,
-            "session_id": session_id
-        }))
-        .map_err(|e| format!("Failed to create request: {}", e))?
-        .send()
-        .await
-        .map_err(|e| format!("Failed to send request: {}", e))?;
-
-    // Always try to parse the JSON response, even for errors
-    let status = response
-        .json::<GenerationStatus>()
-        .await
-        .map_err(|e| format!("Failed to parse response: {}", e))?;
-
-    // Check if it's an error status in the parsed response
-    match status.status {
-        ProcessingStatus::Error => Err(status.message),
-        _ => Ok(status),
-    }
-}
-
 
 #[component]
 fn StatusDisplay(generation_status: RwSignal<GenerationStatus>) -> impl IntoView {

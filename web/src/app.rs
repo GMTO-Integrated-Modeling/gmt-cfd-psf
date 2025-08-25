@@ -1,10 +1,5 @@
-use leptos::{
-    ev,
-    html::{button, div, h1, h2, header, p},
-    prelude::*,
-    task::spawn_local,
-};
-use leptos_meta::{provide_meta_context, Stylesheet, Title};
+use leptos::prelude::*;
+use leptos_meta::{provide_meta_context, Meta, Stylesheet, Title};
 use leptos_router::{
     components::{Route, Router, Routes},
     StaticSegment, WildcardSegment,
@@ -14,22 +9,18 @@ use crate::components::psf_generator::PsfGenerator;
 
 #[component]
 pub fn App() -> impl IntoView {
-    // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
 
     view! {
-        // injects a stylesheet into the document <head>
-        // id=leptos means cargo-leptos will hot-reload this stylesheet
         <Stylesheet id="leptos" href="/pkg/gmt-cfd-psf-web.css"/>
+        <Stylesheet id="tailwind" href="https://cdn.tailwindcss.com"/>
+        <Title text="GMT CFD PSF Generator"/>
+        <Meta name="description" content="Generate Point Spread Function visualizations from GMT CFD data"/>
 
-        // sets the document title
-        <Title text="Welcome to Leptos"/>
-
-        // content for this welcome page
         <Router>
-            <main>
+            <main class="container mx-auto p-4">
                 <Routes fallback=move || "Not found.">
-                    <Route path=StaticSegment("") view=home_page/>
+                    <Route path=StaticSegment("") view=HomePage/>
                     <Route path=WildcardSegment("any") view=NotFound/>
                 </Routes>
             </main>
@@ -37,38 +28,23 @@ pub fn App() -> impl IntoView {
     }
 }
 
-/// Renders the home page of your application.
-// #[component]
-fn home_page() -> impl IntoView {
-    // Creates a reactive value to update the button
-    let count = RwSignal::new(0);
-    // let on_click = move |i: i32| *count.write() += 1;
+#[component]
+fn HomePage() -> impl IntoView {
+    view! {
+        <div class="max-w-6xl mx-auto">
+            <header class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-blue-900 mb-2">
+                    "GMT CFD PSF Generator"
+                </h1>
+                <p class="text-gray-600 text-lg">
+                    "Generate Point Spread Function visualizations from GMT telescope CFD data"
+                </p>
+            </header>
 
-    // view! {
-    //     <h1>"Welcome to Leptos!"</h1>
-    //     <button on:click=on_click>"Click Me: " {count}</button>
-    // }
-    div().child(
-        header().child((
-            h1().child("GMT CFD PSF Generator"),
-            p().child("Generate Point Spread Function visualizations from GMT telescope CFD data"),
-            config_form(),
-            button()
-                // .on(ev::click, move |_| *count.write() += 1)
-                .on(ev::click, move |_| {
-                    spawn_local(async {
-                        cfd_psfs().await.expect("failed to generate CFD PSFs");
-                    })
-                })
-                .child("CFD PSFs"),
-        )),
-    )
+            <PsfGenerator/>
+        </div>
+    }
 }
-
-pub fn config_form() -> impl IntoView {
-    div().child((h2().child("PSF Configuration")))
-}
-
 /// 404 - Not Found
 #[component]
 fn NotFound() -> impl IntoView {
@@ -89,19 +65,4 @@ fn NotFound() -> impl IntoView {
     view! {
         <h1>"Not Found"</h1>
     }
-}
-
-#[server]
-pub async fn cfd_psfs() -> Result<(), ServerFnError> {
-    println!("** CFD PSFS **");
-    #[cfg(feature = "ssr")]
-    {
-        use gmt_cfd_psf::GmtOpticalModel;
-        // Setup GMT optics and imaging
-        let mut gmt = GmtOpticalModel::new()?;
-        // Generate reference frame (no turbulence)
-        gmt.ray_trace().read_detector().save("psf.png")?;
-        println!("Saved frame0 as psf.png");
-    }
-    Ok(())
 }

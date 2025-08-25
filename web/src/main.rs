@@ -3,8 +3,7 @@
 async fn main() -> std::io::Result<()> {
     use actix_files::Files;
     use actix_web::*;
-    use gmt_cfd_psf_web::claude::app::*;
-    use gmt_cfd_psf_web::claude::server::api;
+    use gmt_cfd_psf_web::app::*;
     use leptos::config::get_configuration;
     use leptos::prelude::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
@@ -31,7 +30,6 @@ async fn main() -> std::io::Result<()> {
                 Files::new("/generated", "/home/rconan/projects/gmt-cfd-psf/target/site/generated")
                     .show_files_listing()
             )
-            .configure(api::config_routes)
             .service(favicon)
             .leptos_routes(routes, {
                 let leptos_options = leptos_options.clone();
