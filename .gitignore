@@ -3,3 +3,4 @@ frames/
 *.gif
 *.png
 *.json
+.aider.*

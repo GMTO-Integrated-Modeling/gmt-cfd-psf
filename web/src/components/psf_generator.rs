@@ -41,8 +41,6 @@ pub fn PsfGenerator() -> impl IntoView {
     });
 
     let generate_psf = move || {
-        leptos::logging::log!("generate_psf function called!");
-        println!("generate psf");
         let config_value = config.get();
         let session_id = Uuid::new_v4().to_string();
 
