@@ -3,8 +3,8 @@
 async fn main() -> std::io::Result<()> {
     use actix_files::Files;
     use actix_web::*;
-    use gmt_cfd_psf_web::claude_app::*;
-    use gmt_cfd_psf_web::server::api;
+    use gmt_cfd_psf_web::claude::app::*;
+    use gmt_cfd_psf_web::claude::server::api;
     use leptos::config::get_configuration;
     use leptos::prelude::*;
     use leptos_actix::{generate_route_list, LeptosRoutes};
