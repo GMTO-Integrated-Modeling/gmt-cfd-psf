@@ -1,10 +1,12 @@
+use std::path::Path;
+
 use leptos::{prelude::*, task::spawn_local};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
     components::form_controls::{ConfigForm, PsfConfig},
-    server::psf_generation,
+    server::{psf_animation, psf_generation},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -52,7 +54,7 @@ pub fn PsfGenerator() -> impl IntoView {
                 session_id,
                 status: ProcessingStatus::Error,
                 message:
-                    "At least one turbulence effect (dome seeing or wind loads) must be selected"
+                    "At least one CFD data (dome seeing or wind loads) must be selected"
                         .to_string(),
                 progress: None,
                 images: Vec::new(),
@@ -71,9 +73,27 @@ pub fn PsfGenerator() -> impl IntoView {
 
         spawn_local(async move {
             match psf_generation(config_value, session_id.clone()).await {
-                Ok(images) => {
-                    generation_status.write().images = images;
-                    generation_status.write().status = ProcessingStatus::Complete;
+                Ok(mut images) => {
+                    generation_status.write().images = images.clone();
+                    generation_status.write().message = r#"
+frames generation complete,
+proceeding to creating short exposure PSFs animation"#
+                        .to_string();
+                    let output_dir = Path::new(&images[1].path).parent().unwrap().to_path_buf();
+                    match psf_animation(output_dir).await {
+                        Ok(image) => {
+                            images.push(image);
+                            generation_status.write().images = images;
+                            generation_status.write().status = ProcessingStatus::Complete;
+                        }
+                        Err(e) => generation_status.set(GenerationStatus {
+                            session_id,
+                            status: ProcessingStatus::Error,
+                            message: format!("Error: {}", e),
+                            progress: None,
+                            images: Vec::new(),
+                        }),
+                    }
                 }
                 Err(e) => generation_status.set(GenerationStatus {
                     session_id,

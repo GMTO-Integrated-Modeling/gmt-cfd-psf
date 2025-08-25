@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use leptos::prelude::*;
 
 use crate::components::{form_controls::PsfConfig, psf_generator::GeneratedImage};
@@ -115,4 +117,27 @@ pub async fn psf_generation(
         output_dir
     );
     Ok(images)
+}
+#[server]
+pub async fn psf_animation(output_dir: PathBuf) -> Result<GeneratedImage, ServerFnError> {
+    use std::{path::Path, process::Command};
+    println!("   convert -delay 20 -loop 0 frames/frame_*.png psf_animation.gif");
+    let root = Path::new("target").join("site").join(&output_dir);
+    Command::new("/usr/bin/convert")
+        .arg("-delay")
+        .arg("20")
+        .arg("-loop")
+        .arg("0")
+        .arg(root.join("frames").join("frame_*.png"))
+        .arg(root.join("psf_animation.gif"))
+        .output()?;
+    Ok(GeneratedImage {
+        name: "Short exposure PSFs animation".to_string(),
+        path: format!(
+            "{:}",
+            output_dir.join("psf_animation.gif").to_str().unwrap()
+        ),
+
+        description: "GMT short exposure CFD PSFs animation".to_string(),
+    })
 }
