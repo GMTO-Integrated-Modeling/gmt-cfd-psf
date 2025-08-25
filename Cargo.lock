@@ -1904,6 +1904,8 @@ name = "gmt-cfd-psf"
 version = "0.1.0"
 dependencies = [
  "ab_glyph",
+ "cfg-if",
+ "clap 4.5.45",
  "colorous",
  "crseo",
  "gmt-lom",
@@ -1912,6 +1914,7 @@ dependencies = [
  "imageproc",
  "indicatif 0.18.0",
  "nalgebra 0.33.2",
+ "serde",
  "skyangle 0.3.1",
  "thiserror 2.0.16",
 ]

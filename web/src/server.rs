@@ -11,20 +11,10 @@ pub async fn psf_generation(
         cfd::{Baseline, BaselineTrait, CfdCase},
         CFD_YEAR,
     };
-    use psf::{GmtOpticalModel, PSFs};
+    use psf::{get_enclosure_config, GmtOpticalModel, PSFs};
     use std::{env, fs::create_dir_all, path::Path, time::Instant};
 
     const N_SAMPLE: usize = 100;
-
-    fn get_enclosure_config(wind_speed: u32, zenith_angle: u32) -> &'static str {
-        if wind_speed <= 7 {
-            "os" // open sky for wind <= 7 m/s
-        } else if zenith_angle < 60 {
-            "cd" // closed dome for wind > 7 m/s and zenith < 60°
-        } else {
-            "cs" // closed sky for wind > 7 m/s and zenith >= 60°
-        }
-    }
 
     let now = Instant::now();
 

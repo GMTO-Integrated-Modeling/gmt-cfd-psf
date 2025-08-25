@@ -18,7 +18,7 @@ use parse_monitors::{
     CFD_YEAR,
     cfd::{Baseline, BaselineTrait, CfdCase},
 };
-use psf::{GmtOpticalModel, PSFs};
+use psf::{AzimuthAngle, GmtOpticalModel, PSFs, WindSpeed, ZenithAngle, get_enclosure_config};
 
 const N_SAMPLE: usize = 100;
 
@@ -26,60 +26,6 @@ const N_SAMPLE: usize = 100;
 enum Exposure {
     Short,
     Long,
-}
-
-#[derive(Debug, Clone, ValueEnum)]
-enum ZenithAngle {
-    #[value(name = "0")]
-    Zero = 0,
-    #[value(name = "30")]
-    Thirty = 30,
-    #[value(name = "60")]
-    Sixty = 60,
-}
-
-impl From<ZenithAngle> for u32 {
-    fn from(zen: ZenithAngle) -> u32 {
-        zen as u32
-    }
-}
-
-#[derive(Debug, Clone, ValueEnum)]
-enum AzimuthAngle {
-    #[value(name = "0")]
-    Zero = 0,
-    #[value(name = "45")]
-    FortyFive = 45,
-    #[value(name = "90")]
-    Ninety = 90,
-    #[value(name = "135")]
-    OneThirtyFive = 135,
-    #[value(name = "180")]
-    OneEighty = 180,
-}
-
-impl From<AzimuthAngle> for u32 {
-    fn from(az: AzimuthAngle) -> u32 {
-        az as u32
-    }
-}
-
-#[derive(Debug, Clone, ValueEnum)]
-enum WindSpeed {
-    #[value(name = "2")]
-    Two = 2,
-    #[value(name = "7")]
-    Seven = 7,
-    #[value(name = "12")]
-    Twelve = 12,
-    #[value(name = "17")]
-    Seventeen = 17,
-}
-
-impl From<WindSpeed> for u32 {
-    fn from(ws: WindSpeed) -> u32 {
-        ws as u32
-    }
 }
 
 #[derive(Parser)]
@@ -105,17 +51,6 @@ struct Args {
     /// Wind speed in m/s (2, 7, 12, or 17)
     #[arg(long, value_enum, default_value_t = WindSpeed::Seven)]
     wind_speed: WindSpeed,
-}
-
-/// Determine enclosure configuration based on wind speed and zenith angle
-fn get_enclosure_config(wind_speed: u32, zenith_angle: u32) -> &'static str {
-    if wind_speed <= 7 {
-        "os" // open sky for wind <= 7 m/s
-    } else if zenith_angle < 60 {
-        "cd" // closed dome for wind > 7 m/s and zenith < 60°
-    } else {
-        "cs" // closed sky for wind > 7 m/s and zenith >= 60°
-    }
 }
 
 fn main() -> anyhow::Result<()> {
