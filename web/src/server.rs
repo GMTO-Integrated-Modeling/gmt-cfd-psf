@@ -116,7 +116,7 @@ pub async fn psf_generation(
         psfs.len(),
         output_dir
     );
-    Ok(images)
+    Ok(dbg!(images))
 }
 #[server]
 pub async fn psf_animation(output_dir: PathBuf) -> Result<GeneratedImage, ServerFnError> {

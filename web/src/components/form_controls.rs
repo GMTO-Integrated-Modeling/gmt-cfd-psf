@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use psf::{AzimuthAngle, WindSpeed, ZenithAngle, get_enclosure_config};
+use psf::{get_enclosure_config, AzimuthAngle, WindSpeed, ZenithAngle};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -65,7 +65,7 @@ pub fn ZenithAngle(config: RwSignal<PsfConfig>) -> impl IntoView {
     let get_zenith_image = |angle: &ZenithAngle| -> &'static str {
         match angle {
             ZenithAngle::Zero => "/assets/zen00az000_OS7_tel_tr.png",
-            ZenithAngle::Thirty => "/assets/zen30az000_CD12_tel_tr.png", 
+            ZenithAngle::Thirty => "/assets/zen30az000_CD12_tel_tr.png",
             ZenithAngle::Sixty => "/assets/zen60az000_CS17_tel_tr.png",
         }
     };
@@ -218,7 +218,7 @@ fn get_wind_screen_status(wind_speed: u32, zenith_angle: u32) -> &'static str {
     let enclosure_config = get_enclosure_config(wind_speed, zenith_angle);
     match enclosure_config {
         "os" | "cs" => "stowed",
-        "cd" => "deployed", 
+        "cd" => "deployed",
         _ => "stowed",
     }
 }
@@ -239,7 +239,7 @@ pub fn Vents(config: RwSignal<PsfConfig>) -> impl IntoView {
         let cfg = config.get();
         get_vents_status(cfg.wind_speed.as_u32(), cfg.zenith_angle.as_u32())
     };
-    
+
     view! {
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -257,7 +257,7 @@ pub fn Vents(config: RwSignal<PsfConfig>) -> impl IntoView {
                         format!("Enclosure configuration: {}", enclosure)
                     }
                     class="h-auto rounded border border-gray-200"
-                    style="width: 60%"
+                    style="width: 65%"
                 />
             </div>
             <input
@@ -276,7 +276,7 @@ pub fn WindScreen(config: RwSignal<PsfConfig>) -> impl IntoView {
         let cfg = config.get();
         get_wind_screen_status(cfg.wind_speed.as_u32(), cfg.zenith_angle.as_u32())
     };
-    
+
     view! {
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -294,7 +294,7 @@ pub fn WindScreen(config: RwSignal<PsfConfig>) -> impl IntoView {
                         format!("Enclosure configuration: {}", enclosure)
                     }
                     class="h-auto rounded border border-gray-200"
-                    style="width: 60%"
+                    style="width: 65%"
                 />
             </div>
             <input
