@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use psf::{AzimuthAngle, WindSpeed, ZenithAngle};
+use psf::{AzimuthAngle, WindSpeed, ZenithAngle, get_enclosure_config};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -172,6 +172,68 @@ pub fn WindSpeed(config: RwSignal<PsfConfig>) -> impl IntoView {
     }
 }
 
+fn get_vents_status(wind_speed: u32, zenith_angle: u32) -> &'static str {
+    let enclosure_config = get_enclosure_config(wind_speed, zenith_angle);
+    match enclosure_config {
+        "os" => "open",
+        "cd" | "cs" => "closed",
+        _ => "closed",
+    }
+}
+
+fn get_wind_screen_status(wind_speed: u32, zenith_angle: u32) -> &'static str {
+    let enclosure_config = get_enclosure_config(wind_speed, zenith_angle);
+    match enclosure_config {
+        "os" | "cs" => "stowed",
+        "cd" => "deployed", 
+        _ => "stowed",
+    }
+}
+
+#[component]
+pub fn Vents(config: RwSignal<PsfConfig>) -> impl IntoView {
+    let vents_status = move || {
+        let cfg = config.get();
+        get_vents_status(cfg.wind_speed.as_u32(), cfg.zenith_angle.as_u32())
+    };
+    
+    view! {
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                "Vents"
+            </label>
+            <input
+                type="text"
+                value=vents_status
+                readonly
+                class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+            />
+        </div>
+    }
+}
+
+#[component]
+pub fn WindScreen(config: RwSignal<PsfConfig>) -> impl IntoView {
+    let wind_screen_status = move || {
+        let cfg = config.get();
+        get_wind_screen_status(cfg.wind_speed.as_u32(), cfg.zenith_angle.as_u32())
+    };
+    
+    view! {
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                "Wind Screen"
+            </label>
+            <input
+                type="text"
+                value=wind_screen_status
+                readonly
+                class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+            />
+        </div>
+    }
+}
+
 #[component]
 pub fn ConfigForm(config: RwSignal<PsfConfig>, on_submit: impl Fn() + 'static) -> impl IntoView {
     view! {
@@ -193,7 +255,7 @@ pub fn ConfigForm(config: RwSignal<PsfConfig>, on_submit: impl Fn() + 'static) -
                     <legend class="text-lg font-medium text-gray-700 px-2">
                         "CFD Configuration"
                     </legend>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-2">
 
                         // Zenith Angle
                         <ZenithAngle config=config/>
@@ -203,6 +265,12 @@ pub fn ConfigForm(config: RwSignal<PsfConfig>, on_submit: impl Fn() + 'static) -
 
                         // Wind Speed
                         <WindSpeed config=config/>
+
+                        // Vents
+                        <Vents config=config/>
+
+                        // Wind Screen
+                        <WindScreen config=config/>
                     </div>
                 </fieldset>
 
