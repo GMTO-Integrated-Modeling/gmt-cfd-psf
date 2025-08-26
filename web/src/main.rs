@@ -19,19 +19,21 @@ async fn main() -> std::io::Result<()> {
         let routes = generate_route_list(App);
         let leptos_options = &conf.leptos_options;
         // let site_root = leptos_options.site_root.clone().to_string();
+        //
+        // std::env::set_var("LEPTOS_SITE_URL", "https://18.230.60.221");
 
         println!("listening on http://{}", &addr);
 
         App::new()
             // serve JS/WASM/CSS from `pkg`
-            .service(Files::new("/pkg", "/home/rconan/projects/gmt-cfd-psf/target/site/pkg"))
+            .service(Files::new("/pkg", "/home/ubuntu/projects/gmt-cfd-psf/target/site/pkg"))
             // serve other assets from the `assets` directory
-            .service(Files::new("/assets", "/home/rconan/projects/gmt-cfd-psf/target/site"))
             // serve the favicon from /favicon.ico
             .service(
-                Files::new("/generated", "/home/rconan/projects/gmt-cfd-psf/target/site/generated")
+                Files::new("/generated", "/home/ubuntu/projects/gmt-cfd-psf/target/site/generated")
                     .show_files_listing()
-            )
+            )  
+            .service(Files::new("/assets", "/home/ubuntu/projects/gmt-cfd-psf/target/site"))
             .service(favicon)
             .leptos_routes(routes, {
                 let leptos_options = leptos_options.clone();
