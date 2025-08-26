@@ -4,3 +4,4 @@ frames/
 *.png
 *.json
 .aider.*
+!web/assets/*.png

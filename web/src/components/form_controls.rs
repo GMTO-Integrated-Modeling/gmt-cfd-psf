@@ -62,13 +62,29 @@ pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
 }
 #[component]
 pub fn ZenithAngle(config: RwSignal<PsfConfig>) -> impl IntoView {
+    let get_zenith_image = |angle: &ZenithAngle| -> &'static str {
+        match angle {
+            ZenithAngle::Zero => "/assets/zen00az000_OS7_tel_tr.png",
+            ZenithAngle::Thirty => "/assets/zen30az000_CD12_tel_tr.png", 
+            ZenithAngle::Sixty => "/assets/zen60az000_CS17_tel_tr.png",
+        }
+    };
+
     view! {
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 "Telescope pointing zenith angle"
                             </label>
+                            <div class="mt-2">
+                                <img
+                                    src=move || get_zenith_image(&config.get().zenith_angle)
+                                    alt=move || format!("Zenith angle {} illustration", config.get().zenith_angle.as_str())
+                                    class="h-auto rounded border border-gray-200"
+                                    style="width: 55%"
+                                />
+                            </div>
                             <select
-                                class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 mb-2"
                                 on:change=move |ev| {
                                     let value = event_target_value(&ev);
                                     let zenith = match value.as_str() {
@@ -99,13 +115,30 @@ pub fn ZenithAngle(config: RwSignal<PsfConfig>) -> impl IntoView {
 
 #[component]
 pub fn AzimuthAngle(config: RwSignal<PsfConfig>) -> impl IntoView {
+    let get_azimuth_image = |angle: &AzimuthAngle| -> &'static str {
+        match angle {
+            AzimuthAngle::Zero => "/assets/az0.png",
+            AzimuthAngle::FortyFive => "/assets/az1.png",
+            AzimuthAngle::Ninety => "/assets/az2.png",
+            AzimuthAngle::OneThirtyFive => "/assets/az3.png",
+            AzimuthAngle::OneEighty => "/assets/az4.png",
+        }
+    };
+
     view! {
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-                "Telescope to wind relative azimuth angle"
+                "Telescope relative to wind"
             </label>
+            <div class="mt-2">
+                <img
+                    src=move || get_azimuth_image(&config.get().azimuth_angle)
+                    alt=move || format!("Azimuth angle {} illustration", config.get().azimuth_angle.as_str())
+                    class="w-full h-auto rounded border border-gray-200"
+                />
+            </div>
             <select
-                class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 mb-2"
                 on:change=move |ev| {
                     let value = event_target_value(&ev);
                     let azimuth = match value.as_str() {
@@ -190,6 +223,16 @@ fn get_wind_screen_status(wind_speed: u32, zenith_angle: u32) -> &'static str {
     }
 }
 
+fn get_enclosure_image(wind_speed: u32, zenith_angle: u32) -> &'static str {
+    let enclosure_config = get_enclosure_config(wind_speed, zenith_angle);
+    match enclosure_config {
+        "os" => "/assets/zen30az000_OS7_tr.png",
+        "cd" => "/assets/zen30az000_CD12_tr.png",
+        "cs" => "/assets/zen60az000_CS17_tr.png",
+        _ => "/assets/zen30az000_OS7_tr.png",
+    }
+}
+
 #[component]
 pub fn Vents(config: RwSignal<PsfConfig>) -> impl IntoView {
     let vents_status = move || {
@@ -202,11 +245,26 @@ pub fn Vents(config: RwSignal<PsfConfig>) -> impl IntoView {
             <label class="block text-sm font-medium text-gray-700 mb-2">
                 "Vents"
             </label>
+            <div class="mt-2">
+                <img
+                    src=move || {
+                        let cfg = config.get();
+                        get_enclosure_image(cfg.wind_speed.as_u32(), cfg.zenith_angle.as_u32())
+                    }
+                    alt=move || {
+                        let cfg = config.get();
+                        let enclosure = get_enclosure_config(cfg.wind_speed.as_u32(), cfg.zenith_angle.as_u32());
+                        format!("Enclosure configuration: {}", enclosure)
+                    }
+                    class="h-auto rounded border border-gray-200"
+                    style="width: 60%"
+                />
+            </div>
             <input
                 type="text"
                 value=vents_status
                 readonly
-                class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 mb-2"
             />
         </div>
     }
@@ -224,11 +282,26 @@ pub fn WindScreen(config: RwSignal<PsfConfig>) -> impl IntoView {
             <label class="block text-sm font-medium text-gray-700 mb-2">
                 "Wind Screen"
             </label>
+            <div class="mt-2">
+                <img
+                    src=move || {
+                        let cfg = config.get();
+                        get_enclosure_image(cfg.wind_speed.as_u32(), cfg.zenith_angle.as_u32())
+                    }
+                    alt=move || {
+                        let cfg = config.get();
+                        let enclosure = get_enclosure_config(cfg.wind_speed.as_u32(), cfg.zenith_angle.as_u32());
+                        format!("Enclosure configuration: {}", enclosure)
+                    }
+                    class="h-auto rounded border border-gray-200"
+                    style="width: 60%"
+                />
+            </div>
             <input
                 type="text"
                 value=wind_screen_status
                 readonly
-                class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
+                class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 mb-2"
             />
         </div>
     }
