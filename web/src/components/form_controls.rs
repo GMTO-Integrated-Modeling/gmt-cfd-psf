@@ -1,5 +1,6 @@
+use leptos::prelude::Show;
 use leptos::prelude::*;
-use psf::{get_enclosure_config, AzimuthAngle, WindSpeed, ElevationAngle};
+use psf::{get_enclosure_config, AzimuthAngle, ElevationAngle, WindSpeed};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -25,6 +26,20 @@ impl Default for PsfConfig {
 
 #[component]
 pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
+    // Function to generate YouTube video title based on configuration
+    let get_video_title = move || {
+        let cfg = config.get();
+        let elevation_str = format!("{:02}", cfg.elevation_angle.as_u32());
+        let azimuth_str = format!("{:03}", cfg.azimuth_angle.as_u32());
+        let enclosure = get_enclosure_config(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32())
+            .to_uppercase();
+        let wind_speed = cfg.wind_speed.as_u32();
+        format!(
+            "zen{}az{}_{}_{wind_speed}ms",
+            elevation_str, azimuth_str, enclosure
+        )
+    };
+
     view! {
                 <fieldset class="border border-gray-300 rounded-lg p-4">
                     <legend class="text-lg font-medium text-gray-700 px-2">
@@ -57,6 +72,34 @@ pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
                             <span class="text-sm font-medium text-gray-700">"Wind Loads"</span>
                         </label>
                     </div>
+
+                    // YouTube video section when DomeSeeing is selected
+                    <Show when=move || config.get().domeseeing>
+                        {move || {
+                            let video_title = get_video_title();
+                            view! {
+                                <div class="mt-4 border-t border-gray-200 pt-4">
+                                    <h4 class="text-md font-medium text-gray-700 mb-3">
+                                        "CFD Visualization: " {video_title.clone()}
+                                    </h4>
+                                    <div class="relative w-full" style="padding-bottom: 56.25%;">
+                                        <iframe
+                                            class="absolute top-0 left-0 w-full h-full rounded-lg shadow-md"
+                                            src=format!("https://www.youtube.com/embed/videoseries?list=PLTrfhf7NjCR0DqiBP_XcvI-nzQbq3PO1L&index=1")
+                                            title=format!("CFD Data Visualization: {}", video_title)
+                                            style="border: 0;"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                            allowfullscreen=true
+                                        >
+                                        </iframe>
+                                    </div>
+                                    <p class="mt-2 text-sm text-gray-600 italic">
+                                        "Configuration: " {video_title}
+                                    </p>
+                                </div>
+                            }
+                        }}
+                    </Show>
                 </fieldset>
     }
 }
@@ -64,7 +107,7 @@ pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
 pub fn ElevationAngle(config: RwSignal<PsfConfig>) -> impl IntoView {
     let get_zenith_image = |angle: &ElevationAngle| -> &'static str {
         match angle {
-            ElevationAngle::Ninety=> "/assets/zen00az000_OS7_tel_tr.png",
+            ElevationAngle::Ninety => "/assets/zen00az000_OS7_tel_tr.png",
             ElevationAngle::Thirty => "/assets/zen60az000_CS17_tel_tr.png",
             ElevationAngle::Sixty => "/assets/zen30az000_CD12_tel_tr.png",
         }

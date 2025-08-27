@@ -53,9 +53,8 @@ pub fn PsfGenerator() -> impl IntoView {
             generation_status.set(GenerationStatus {
                 session_id,
                 status: ProcessingStatus::Error,
-                message:
-                    "At least one CFD data (dome seeing or wind loads) must be selected"
-                        .to_string(),
+                message: "At least one CFD data (dome seeing or wind loads) must be selected"
+                    .to_string(),
                 progress: None,
                 images: Vec::new(),
             });
