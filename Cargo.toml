@@ -22,7 +22,7 @@ serde = { workspace = true, optional = true }
 cfg-if = "1.0.3"
 
 [workspace]
-members = ["cli", "web"]
+members = ["cli", "web", "youtube-playlist-fetcher"]
 
 [workspace.dependencies]
 anyhow = "1.0.99"
