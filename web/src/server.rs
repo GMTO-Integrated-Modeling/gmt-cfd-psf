@@ -13,7 +13,7 @@ pub async fn psf_generation(
         cfd::{Baseline, BaselineTrait, CfdCase},
         CFD_YEAR,
     };
-    use psf::{get_enclosure_config, GmtOpticalModel, PSFs};
+    use psf::{get_enclosure_config, GmtOpticalModel, PSFs, ZenithAngle};
     use std::{env, fs::create_dir_all, path::Path, time::Instant};
 
     const N_SAMPLE: usize = 100;
@@ -51,7 +51,7 @@ pub async fn psf_generation(
     }
 
     // CFD case configuration
-    let zenith = config.zenith_angle.as_u32();
+    let zenith = ZenithAngle::from(config.elevation_angle).as_u32();
     let azimuth = config.azimuth_angle.as_u32();
     let wind_speed = config.wind_speed.as_u32();
     let enclosure = get_enclosure_config(wind_speed, zenith);

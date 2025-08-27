@@ -65,7 +65,7 @@ impl GmtOpticalModel {
         println!(
             "Detector: pixel scale: {:.0}mas, FOV: {:.2}arcsec",
             px,
-            imgr.field_of_view(&src).to_arcsec()
+            imgr.field_of_view(&src).to_mas()
         );
 
         let atm = Atmosphere::builder().build()?;

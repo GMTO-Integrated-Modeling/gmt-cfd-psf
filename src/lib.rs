@@ -81,6 +81,51 @@ impl ZenithAngle {
         }
     }
 }
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "clap", derive(clap::ValueEnum))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum ElevationAngle {
+    #[cfg_attr(feature = "clap", value(name = "90"))]
+    Ninety = 90,
+    #[cfg_attr(feature = "clap", value(name = "30"))]
+    Thirty = 30,
+    #[cfg_attr(feature = "clap", value(name = "60"))]
+    Sixty = 60,
+}
+
+impl From<ElevationAngle> for u32 {
+    fn from(zen: ElevationAngle) -> u32 {
+        zen as u32
+    }
+}
+
+impl ElevationAngle {
+    pub fn all() -> Vec<Self> {
+        vec![Self::Ninety, Self::Sixty, Self::Thirty]
+    }
+
+    pub fn as_u32(&self) -> u32 {
+        *self as u32
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Ninety => "90°",
+            Self::Thirty => "30°",
+            Self::Sixty => "60°",
+        }
+    }
+}
+
+impl From<ElevationAngle> for ZenithAngle {
+    fn from(value: ElevationAngle) -> Self {
+        match value {
+            ElevationAngle::Ninety => ZenithAngle::Zero,
+            ElevationAngle::Thirty => ZenithAngle::Sixty,
+            ElevationAngle::Sixty => ZenithAngle::Thirty,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "clap", derive(clap::ValueEnum))]

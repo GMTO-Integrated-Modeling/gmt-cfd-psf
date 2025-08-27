@@ -188,7 +188,7 @@ fn ImageGallery(generation_status: RwSignal<GenerationStatus>) -> impl IntoView 
                     view! {
                         <div class="mb-4">
                             <p class="text-sm text-gray-600 bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
-                                "The big circle shows the size of the atmospheric turbulence seeing and the small circle is the size of the diffraction limited image of one GMT segment within which the GMT PSF is fully contained."
+                                "The images field-of-view is 768ms. The big circle shows the size of the atmospheric turbulence seeing and the small circle is the size of the diffraction limited image of one GMT segment within which the GMT PSF is fully contained."
                             </p>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

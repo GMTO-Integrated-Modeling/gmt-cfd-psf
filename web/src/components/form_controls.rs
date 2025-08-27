@@ -1,12 +1,12 @@
 use leptos::prelude::*;
-use psf::{get_enclosure_config, AzimuthAngle, WindSpeed, ZenithAngle};
+use psf::{get_enclosure_config, AzimuthAngle, WindSpeed, ElevationAngle};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PsfConfig {
     pub domeseeing: bool,
     pub windloads: bool,
-    pub zenith_angle: ZenithAngle,
+    pub elevation_angle: ElevationAngle,
     pub azimuth_angle: AzimuthAngle,
     pub wind_speed: WindSpeed,
 }
@@ -16,7 +16,7 @@ impl Default for PsfConfig {
         Self {
             domeseeing: false,
             windloads: false,
-            zenith_angle: ZenithAngle::Thirty,
+            elevation_angle: ElevationAngle::Sixty,
             azimuth_angle: AzimuthAngle::Zero,
             wind_speed: WindSpeed::Seven,
         }
@@ -61,24 +61,24 @@ pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
     }
 }
 #[component]
-pub fn ZenithAngle(config: RwSignal<PsfConfig>) -> impl IntoView {
-    let get_zenith_image = |angle: &ZenithAngle| -> &'static str {
+pub fn ElevationAngle(config: RwSignal<PsfConfig>) -> impl IntoView {
+    let get_zenith_image = |angle: &ElevationAngle| -> &'static str {
         match angle {
-            ZenithAngle::Zero => "/assets/zen00az000_OS7_tel_tr.png",
-            ZenithAngle::Thirty => "/assets/zen30az000_CD12_tel_tr.png",
-            ZenithAngle::Sixty => "/assets/zen60az000_CS17_tel_tr.png",
+            ElevationAngle::Ninety=> "/assets/zen00az000_OS7_tel_tr.png",
+            ElevationAngle::Thirty => "/assets/zen60az000_CS17_tel_tr.png",
+            ElevationAngle::Sixty => "/assets/zen30az000_CD12_tel_tr.png",
         }
     };
 
     view! {
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                "Telescope pointing zenith angle"
+                                "Telescope elevation"
                             </label>
                             <div class="mt-2">
                                 <img
-                                    src=move || get_zenith_image(&config.get().zenith_angle)
-                                    alt=move || format!("Zenith angle {} illustration", config.get().zenith_angle.as_str())
+                                    src=move || get_zenith_image(&config.get().elevation_angle)
+                                    alt=move || format!("Zenith angle {} illustration", config.get().elevation_angle.as_str())
                                     class="h-auto rounded border border-gray-200"
                                     style="width: 55%"
                                 />
@@ -88,16 +88,16 @@ pub fn ZenithAngle(config: RwSignal<PsfConfig>) -> impl IntoView {
                                 on:change=move |ev| {
                                     let value = event_target_value(&ev);
                                     let zenith = match value.as_str() {
-                                        "0" => ZenithAngle::Zero,
-                                        "30" => ZenithAngle::Thirty,
-                                        "60" => ZenithAngle::Sixty,
-                                        _ => ZenithAngle::Thirty,
+                                        "90" => ElevationAngle::Ninety,
+                                        "60" => ElevationAngle::Sixty,
+                                        "30" => ElevationAngle::Thirty,
+                                        _ => ElevationAngle::Thirty,
                                     };
-                                    config.update(|c| c.zenith_angle = zenith);
+                                    config.update(|c| c.elevation_angle = zenith);
                                 }
                             >
-                                {ZenithAngle::all().into_iter().map(|angle| {
-                                    let selected = move || config.get().zenith_angle == angle;
+                                {ElevationAngle::all().into_iter().map(|angle| {
+                                    let selected = move || config.get().elevation_angle == angle;
                                     view! {
                                         <option
                                             value={angle.as_u32().to_string()}
@@ -175,6 +175,21 @@ pub fn WindSpeed(config: RwSignal<PsfConfig>) -> impl IntoView {
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         "Wind speed"
                     </label>
+                    <div class="mt-2">
+                        <img
+                            src=move || {
+                                let cfg = config.get();
+                                get_enclosure_image(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32())
+                            }
+                            alt=move || {
+                                let cfg = config.get();
+                                let enclosure = get_enclosure_config(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32());
+                                format!("Enclosure configuration: {}", enclosure)
+                            }
+                            class="h-auto rounded border border-gray-200"
+                            style="width: 65%"
+                        />
+                    </div>
                     <select
                         class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                         on:change=move |ev| {
@@ -237,7 +252,7 @@ fn get_enclosure_image(wind_speed: u32, zenith_angle: u32) -> &'static str {
 pub fn Vents(config: RwSignal<PsfConfig>) -> impl IntoView {
     let vents_status = move || {
         let cfg = config.get();
-        get_vents_status(cfg.wind_speed.as_u32(), cfg.zenith_angle.as_u32())
+        get_vents_status(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32())
     };
 
     view! {
@@ -249,11 +264,11 @@ pub fn Vents(config: RwSignal<PsfConfig>) -> impl IntoView {
                 <img
                     src=move || {
                         let cfg = config.get();
-                        get_enclosure_image(cfg.wind_speed.as_u32(), cfg.zenith_angle.as_u32())
+                        get_enclosure_image(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32())
                     }
                     alt=move || {
                         let cfg = config.get();
-                        let enclosure = get_enclosure_config(cfg.wind_speed.as_u32(), cfg.zenith_angle.as_u32());
+                        let enclosure = get_enclosure_config(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32());
                         format!("Enclosure configuration: {}", enclosure)
                     }
                     class="h-auto rounded border border-gray-200"
@@ -274,7 +289,7 @@ pub fn Vents(config: RwSignal<PsfConfig>) -> impl IntoView {
 pub fn WindScreen(config: RwSignal<PsfConfig>) -> impl IntoView {
     let wind_screen_status = move || {
         let cfg = config.get();
-        get_wind_screen_status(cfg.wind_speed.as_u32(), cfg.zenith_angle.as_u32())
+        get_wind_screen_status(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32())
     };
 
     view! {
@@ -286,11 +301,11 @@ pub fn WindScreen(config: RwSignal<PsfConfig>) -> impl IntoView {
                 <img
                     src=move || {
                         let cfg = config.get();
-                        get_enclosure_image(cfg.wind_speed.as_u32(), cfg.zenith_angle.as_u32())
+                        get_enclosure_image(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32())
                     }
                     alt=move || {
                         let cfg = config.get();
-                        let enclosure = get_enclosure_config(cfg.wind_speed.as_u32(), cfg.zenith_angle.as_u32());
+                        let enclosure = get_enclosure_config(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32());
                         format!("Enclosure configuration: {}", enclosure)
                     }
                     class="h-auto rounded border border-gray-200"
@@ -328,22 +343,27 @@ pub fn ConfigForm(config: RwSignal<PsfConfig>, on_submit: impl Fn() + 'static) -
                     <legend class="text-lg font-medium text-gray-700 px-2">
                         "CFD Configuration"
                     </legend>
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-600 bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+                                "Select the telescope orientation with respect to the wind, the wind is always blowing from the NNE direction; Select the wind speed, the enclosure vents and wind screen setup depends on the wind speed: either open/stowed or closed/deployed; Select the telescope elevation angle (at low elevation the wind screen is stowed)"
+                            </p>
+                        </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-2">
-
-                        // Zenith Angle
-                        <ZenithAngle config=config/>
 
                         // Azimuth Angle
                         <AzimuthAngle config=config/>
 
+                        // Zenith Angle
+                        <ElevationAngle config=config/>
+
                         // Wind Speed
                         <WindSpeed config=config/>
 
-                        // Vents
-                        <Vents config=config/>
+                        // // Vents
+                        // <Vents config=config/>
 
-                        // Wind Screen
-                        <WindScreen config=config/>
+                        // // Wind Screen
+                        // <WindScreen config=config/>
                     </div>
                 </fieldset>
 
