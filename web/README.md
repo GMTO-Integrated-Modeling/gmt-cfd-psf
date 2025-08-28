@@ -30,6 +30,10 @@ Of course, you should explore around the project structure, but the best place t
 `cargo leptos watch`  
 By default, you can access your local project at `http://localhost:3000`
 
+Running with release optimization
+`RUSTFLAGS="--cfg erase_components" cargo leptos watch -r`
+
+
 ## Installing Additional Tools
 
 By default, `cargo-leptos` uses `nightly` Rust, `cargo-generate`, and `sass`. If you run into any trouble, you may need to install one or more of these tools.
