@@ -215,10 +215,13 @@ impl WindSpeed {
 }
 
 /// Determine enclosure configuration based on wind speed and zenith angle
-pub fn get_enclosure_config(wind_speed: u32, zenith_angle: u32) -> &'static str {
+pub fn get_enclosure_config(
+    wind_speed: u32,
+    telescope_pointing: impl Into<ZenithAngle>,
+) -> &'static str {
     if wind_speed <= 7 {
         "os" // open sky for wind <= 7 m/s
-    } else if zenith_angle < 60 {
+    } else if telescope_pointing.into().as_u32() < 60 {
         "cd" // closed dome for wind > 7 m/s and zenith < 60°
     } else {
         "cs" // closed sky for wind > 7 m/s and zenith >= 60°

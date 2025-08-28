@@ -54,7 +54,7 @@ pub async fn psf_generation(
     let zenith = ZenithAngle::from(config.elevation_angle).as_u32();
     let azimuth = config.azimuth_angle.as_u32();
     let wind_speed = config.wind_speed.as_u32();
-    let enclosure = get_enclosure_config(wind_speed, zenith);
+    let enclosure = get_enclosure_config(wind_speed, config.elevation_angle);
 
     let cfd_case = CfdCase::<CFD_YEAR>::colloquial(zenith, azimuth, enclosure, wind_speed)?;
     gmt.set_config(gmt.get_config().cfd_case(cfd_case.to_string()));
@@ -116,7 +116,7 @@ pub async fn psf_generation(
         psfs.len(),
         output_dir
     );
-    Ok(dbg!(images))
+    Ok(images)
 }
 #[server]
 pub async fn psf_animation(output_dir: PathBuf) -> Result<GeneratedImage, ServerFnError> {

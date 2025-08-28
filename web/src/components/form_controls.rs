@@ -1,7 +1,11 @@
+use std::collections::HashMap;
+
 use leptos::prelude::Show;
 use leptos::prelude::*;
-use psf::{get_enclosure_config, AzimuthAngle, ElevationAngle, WindSpeed};
+use psf::{get_enclosure_config, AzimuthAngle, ElevationAngle, WindSpeed, ZenithAngle};
 use serde::{Deserialize, Serialize};
+
+use crate::components::youtube_playlists;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PsfConfig {
@@ -27,17 +31,22 @@ impl Default for PsfConfig {
 #[component]
 pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
     // Function to generate YouTube video title based on configuration
+    let playlist: HashMap<String, String> =
+        serde_json::from_str(youtube_playlists::DOMESEEING).unwrap();
+    let (playlist, ..) = signal(playlist);
     let get_video_title = move || {
         let cfg = config.get();
-        let elevation_str = format!("{:02}", cfg.elevation_angle.as_u32());
+        let zenith_str = format!("{:02}", ZenithAngle::from(cfg.elevation_angle).as_u32());
         let azimuth_str = format!("{:03}", cfg.azimuth_angle.as_u32());
-        let enclosure = get_enclosure_config(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32())
-            .to_uppercase();
+        let enclosure =
+            get_enclosure_config(cfg.wind_speed.as_u32(), cfg.elevation_angle).to_uppercase();
         let wind_speed = cfg.wind_speed.as_u32();
-        format!(
+        let title = format!(
             "zen{}az{}_{}_{wind_speed}ms",
-            elevation_str, azimuth_str, enclosure
-        )
+            zenith_str, azimuth_str, enclosure
+        );
+        let id = playlist.get().get(&title).unwrap().to_owned();
+        (title, id)
     };
 
     view! {
@@ -76,16 +85,16 @@ pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
                     // YouTube video section when DomeSeeing is selected
                     <Show when=move || config.get().domeseeing>
                         {move || {
-                            let video_title = get_video_title();
+                            let (video_title ,video_id)= get_video_title();
                             view! {
                                 <div class="mt-4 border-t border-gray-200 pt-4">
-                                    <h4 class="text-md font-medium text-gray-700 mb-3">
-                                        "CFD Visualization: " {video_title.clone()}
-                                    </h4>
-                                    <div class="relative w-full" style="padding-bottom: 56.25%;">
+                                    // <h4 class="text-md font-medium text-gray-700 mb-3">
+                                    //     "CFD Visualization: " {video_title.clone()}
+                                    // </h4>
+                                    <div class="relative w-1/2" style="padding-bottom: 28.125%;">
                                         <iframe
                                             class="absolute top-0 left-0 w-full h-full rounded-lg shadow-md"
-                                            src=format!("https://www.youtube.com/embed/videoseries?list=PLTrfhf7NjCR0DqiBP_XcvI-nzQbq3PO1L&index=1")
+                                            src=format!("https://www.youtube.com/embed/{video_id}")
                                             title=format!("CFD Data Visualization: {}", video_title)
                                             style="border: 0;"
                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -222,11 +231,11 @@ pub fn WindSpeed(config: RwSignal<PsfConfig>) -> impl IntoView {
                         <img
                             src=move || {
                                 let cfg = config.get();
-                                get_enclosure_image(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32())
+                                get_enclosure_image(cfg.wind_speed.as_u32(), cfg.elevation_angle)
                             }
                             alt=move || {
                                 let cfg = config.get();
-                                let enclosure = get_enclosure_config(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32());
+                                let enclosure = get_enclosure_config(cfg.wind_speed.as_u32(), cfg.elevation_angle);
                                 format!("Enclosure configuration: {}", enclosure)
                             }
                             class="h-auto rounded border border-gray-200"
@@ -263,8 +272,8 @@ pub fn WindSpeed(config: RwSignal<PsfConfig>) -> impl IntoView {
     }
 }
 
-fn get_vents_status(wind_speed: u32, zenith_angle: u32) -> &'static str {
-    let enclosure_config = get_enclosure_config(wind_speed, zenith_angle);
+fn get_vents_status(wind_speed: u32, pointing: impl Into<ZenithAngle>) -> &'static str {
+    let enclosure_config = get_enclosure_config(wind_speed, pointing);
     match enclosure_config {
         "os" => "open",
         "cd" | "cs" => "closed",
@@ -272,8 +281,8 @@ fn get_vents_status(wind_speed: u32, zenith_angle: u32) -> &'static str {
     }
 }
 
-fn get_wind_screen_status(wind_speed: u32, zenith_angle: u32) -> &'static str {
-    let enclosure_config = get_enclosure_config(wind_speed, zenith_angle);
+fn get_wind_screen_status(wind_speed: u32, pointing: impl Into<ZenithAngle>) -> &'static str {
+    let enclosure_config = get_enclosure_config(wind_speed, pointing);
     match enclosure_config {
         "os" | "cs" => "stowed",
         "cd" => "deployed",
@@ -281,8 +290,8 @@ fn get_wind_screen_status(wind_speed: u32, zenith_angle: u32) -> &'static str {
     }
 }
 
-fn get_enclosure_image(wind_speed: u32, zenith_angle: u32) -> &'static str {
-    let enclosure_config = get_enclosure_config(wind_speed, zenith_angle);
+fn get_enclosure_image(wind_speed: u32, pointing: impl Into<ZenithAngle>) -> &'static str {
+    let enclosure_config = get_enclosure_config(wind_speed, pointing);
     match enclosure_config {
         "os" => "/assets/zen30az000_OS7_tr.png",
         "cd" => "/assets/zen30az000_CD12_tr.png",
@@ -295,7 +304,7 @@ fn get_enclosure_image(wind_speed: u32, zenith_angle: u32) -> &'static str {
 pub fn Vents(config: RwSignal<PsfConfig>) -> impl IntoView {
     let vents_status = move || {
         let cfg = config.get();
-        get_vents_status(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32())
+        get_vents_status(cfg.wind_speed.as_u32(), cfg.elevation_angle)
     };
 
     view! {
@@ -307,11 +316,11 @@ pub fn Vents(config: RwSignal<PsfConfig>) -> impl IntoView {
                 <img
                     src=move || {
                         let cfg = config.get();
-                        get_enclosure_image(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32())
+                        get_enclosure_image(cfg.wind_speed.as_u32(), cfg.elevation_angle)
                     }
                     alt=move || {
                         let cfg = config.get();
-                        let enclosure = get_enclosure_config(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32());
+                        let enclosure = get_enclosure_config(cfg.wind_speed.as_u32(), cfg.elevation_angle);
                         format!("Enclosure configuration: {}", enclosure)
                     }
                     class="h-auto rounded border border-gray-200"
@@ -332,7 +341,7 @@ pub fn Vents(config: RwSignal<PsfConfig>) -> impl IntoView {
 pub fn WindScreen(config: RwSignal<PsfConfig>) -> impl IntoView {
     let wind_screen_status = move || {
         let cfg = config.get();
-        get_wind_screen_status(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32())
+        get_wind_screen_status(cfg.wind_speed.as_u32(), cfg.elevation_angle)
     };
 
     view! {
@@ -344,11 +353,11 @@ pub fn WindScreen(config: RwSignal<PsfConfig>) -> impl IntoView {
                 <img
                     src=move || {
                         let cfg = config.get();
-                        get_enclosure_image(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32())
+                        get_enclosure_image(cfg.wind_speed.as_u32(), cfg.elevation_angle)
                     }
                     alt=move || {
                         let cfg = config.get();
-                        let enclosure = get_enclosure_config(cfg.wind_speed.as_u32(), cfg.elevation_angle.as_u32());
+                        let enclosure = get_enclosure_config(cfg.wind_speed.as_u32(), cfg.elevation_angle);
                         format!("Enclosure configuration: {}", enclosure)
                     }
                     class="h-auto rounded border border-gray-200"
