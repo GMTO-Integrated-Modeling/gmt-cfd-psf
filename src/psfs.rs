@@ -16,7 +16,7 @@ use std::{
     fs::create_dir_all,
     io,
     path::{Path, PathBuf},
-    rc::Rc,
+    rc::Rc, sync::atomic::AtomicUsize,
 };
 
 use indicatif::{ProgressBar, ProgressStyle};
@@ -172,6 +172,23 @@ impl PSFs {
         }
 
         save_pb.finish_with_message("All frames saved");
+        Ok(())
+    }
+    pub fn save_all_frames_with_atomic_index(&self, path: impl AsRef<Path>, idx: &AtomicUsize) -> Result<(), PSFsError> {
+        let frames: Vec<_> = self.psfs.iter().map(|psf| psf.frame.as_slice()).collect();
+        let global_minmax = find_global_extrema(&frames);
+
+        // Setup output directory
+        let frames_dir = Path::new(path.as_ref());
+        create_dir_all(frames_dir)
+            .map_err(|e| PSFsError::CreateFrameDir(e, frames_dir.to_path_buf()))?;
+
+        for (i, psf) in self.psfs.iter().enumerate() {
+            idx.store(i, std::sync::atomic::Ordering::Relaxed);
+            let filename = frames_dir.join(format!("frame_{:06}.png", i));
+            psf.save_frame_as_png(filename, Some(global_minmax))?;
+        }
+
         Ok(())
     }
 }

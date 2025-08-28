@@ -1,12 +1,15 @@
 use std::path::Path;
 
+use futures::StreamExt;
+use gloo_timers::future::IntervalStream;
 use leptos::{prelude::*, task::spawn_local};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
     components::form_controls::{ConfigForm, PsfConfig},
-    server::{psf_animation, psf_generation},
+    server::{get_frame_id, psf_animation, psf_generation},
+    N_SAMPLE,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -70,25 +73,68 @@ pub fn PsfGenerator() -> impl IntoView {
             images: Vec::new(),
         });
 
+        // Start progress tracking timer
+        let generation_status_clone = generation_status.clone();
+        let session_id_clone = session_id.clone();
+        spawn_local(async move {
+            let mut interval = IntervalStream::new(1000); // 1 second intervals
+
+            while let Some(_) = interval.next().await {
+                let current_status = generation_status_clone.get();
+
+                // Only update progress if we're still processing
+                if matches!(current_status.status, ProcessingStatus::Processing) {
+                    match get_frame_id().await {
+                        Ok(frame_id) => {
+                            // Calculate progress: frame_id ranges from 0 to 99, so progress is 0-100%
+                            let progress = ((frame_id + 1) as f32 / N_SAMPLE as f32) * 100.0;
+
+                            generation_status_clone.update(|status| {
+                                if status.session_id == session_id_clone {
+                                    status.progress = Some(progress);
+                                    // status.message = format!("Processing frame {} of 100...", frame_id + 1);
+                                }
+                            });
+                        }
+                        Err(_) => {
+                            // If we can't get frame ID, just continue polling
+                            continue;
+                        }
+                    }
+                } else {
+                    // Stop polling if no longer processing
+                    break;
+                }
+            }
+        });
+
+        // Main PSF generation task
         spawn_local(async move {
             match psf_generation(config_value, session_id.clone()).await {
                 Ok(mut images) => {
-                    generation_status.write().images = images.clone();
-                    generation_status.write().message = r#"
-frames generation complete,
+                    generation_status.update(|status| {
+                        status.images = images.clone();
+                        status.message = r#"frames generation complete,
 proceeding to creating short exposure PSFs animation"#
-                        .to_string();
+                            .to_string();
+                        status.progress = Some(100.0);
+                    });
+
                     let output_dir = Path::new(&images[1].path).parent().unwrap().to_path_buf();
                     match psf_animation(output_dir).await {
                         Ok(image) => {
                             images.push(image);
-                            generation_status.write().images = images;
-                            generation_status.write().status = ProcessingStatus::Complete;
+                            generation_status.update(|status| {
+                                status.images = images;
+                                status.status = ProcessingStatus::Complete;
+                                status.message = "Generation complete!".to_string();
+                                status.progress = Some(100.0);
+                            });
                         }
                         Err(e) => generation_status.set(GenerationStatus {
                             session_id,
                             status: ProcessingStatus::Error,
-                            message: format!("Error: {}", e),
+                            message: format!("Error creating animation: {}", e),
                             progress: None,
                             images: Vec::new(),
                         }),

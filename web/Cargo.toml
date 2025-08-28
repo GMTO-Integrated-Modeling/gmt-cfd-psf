@@ -19,6 +19,8 @@ wasm-bindgen = "=0.2.100"
 uuid = { version = "1.18.0", features = ["js", "serde", "v4"] }
 serde.workspace = true
 gloo-net = "0.6.0"
+gloo-timers = { version = "0.3.0", features = ["futures"] }
+futures = "0.3.31"
 serde_json = "1.0.143"
 tokio = { version = "1.47.1", optional = true, features = [
   "macros",

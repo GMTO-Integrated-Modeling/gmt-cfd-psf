@@ -94,14 +94,14 @@ pub async fn psf_generation(
         );
 
         // Could emit progress updates here via websocket or polling endpoint
-        let progress = ((i + 1) as f32 / N_SAMPLE as f32) * 100.0;
-        println!("Progress: {:.1}%", progress);
+        // let progress = ((i + 1) as f32 / N_SAMPLE as f32) * 100.0;
+        // println!("Progress: {:.1}%", progress);
     }
 
     // Setup output directory for frames
     let frames_dir = format!("{}/frames", output_dir);
     // Save all turbulence frames with consistent normalization
-    psfs.save_all_frames(frames_dir)?;
+    psfs.save_all_frames_with_atomic_index(frames_dir,&FRAME_ID)?;
 
     let long_exposure_path = format!("{}/long_exposure_psf.png", output_dir);
     psfs.sum().save(&long_exposure_path)?;
