@@ -31,10 +31,10 @@ impl Default for PsfConfig {
 #[component]
 pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
     // Function to generate YouTube video title based on configuration
-    let playlist: HashMap<String, String> =
+    let domeseeing_playlist: HashMap<String, String> =
         serde_json::from_str(youtube_playlists::DOMESEEING).unwrap();
-    let (playlist, ..) = signal(playlist);
-    let get_video_title = move || {
+    let (domeseeing_playlist, ..) = signal(domeseeing_playlist);
+    let get_domeseeing_video = move || {
         let cfg = config.get();
         let zenith_str = format!("{:02}", ZenithAngle::from(cfg.elevation_angle).as_u32());
         let azimuth_str = format!("{:03}", cfg.azimuth_angle.as_u32());
@@ -45,7 +45,25 @@ pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
             "zen{}az{}_{}_{wind_speed}ms",
             zenith_str, azimuth_str, enclosure
         );
-        let id = playlist.get().get(&title).unwrap().to_owned();
+        let id = domeseeing_playlist.get().get(&title).unwrap().to_owned();
+        (title, id)
+    };
+    
+    let windloads_playlist: HashMap<String, String> =
+        serde_json::from_str(youtube_playlists::WINDLOADS).unwrap();
+    let (windloads_playlist, ..) = signal(windloads_playlist);
+    let get_windloads_video = move || {
+        let cfg = config.get();
+        let zenith_str = format!("{:02}", ZenithAngle::from(cfg.elevation_angle).as_u32());
+        let azimuth_str = format!("{:03}", cfg.azimuth_angle.as_u32());
+        let enclosure =
+            get_enclosure_config(cfg.wind_speed.as_u32(), cfg.elevation_angle).to_uppercase();
+        let wind_speed = cfg.wind_speed.as_u32();
+        let title = format!(
+            "zen{}az{}_{}_{wind_speed}ms",
+            zenith_str, azimuth_str, enclosure
+        );
+        let id = windloads_playlist.get().get(&title).unwrap().to_owned();
         (title, id)
     };
 
@@ -82,32 +100,61 @@ pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
                         </label>
                     </div>
 
-                    // YouTube video section when DomeSeeing is selected
-                    <Show when=move || config.get().domeseeing>
-                        {move || {
-                            let (video_title ,video_id)= get_video_title();
-                            view! {
-                                <div class="mt-4 border-t border-gray-200 pt-4">
-                                    // <h4 class="text-md font-medium text-gray-700 mb-3">
-                                    //     "CFD Visualization: " {video_title.clone()}
-                                    // </h4>
-                                    <div class="relative w-1/2" style="padding-bottom: 28.125%;">
-                                        <iframe
-                                            class="absolute top-0 left-0 w-full h-full rounded-lg shadow-md"
-                                            src=format!("https://www.youtube.com/embed/{video_id}")
-                                            title=format!("CFD Data Visualization: {}", video_title)
-                                            style="border: 0;"
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                            allowfullscreen=true
-                                        >
-                                        </iframe>
-                                    </div>
-                                    <p class="mt-2 text-sm text-gray-600 italic">
-                                        "Configuration: " {video_title}
-                                    </p>
-                                </div>
-                            }
-                        }}
+                    // YouTube videos section - side by side layout
+                    <Show when=move || config.get().domeseeing || config.get().windloads>
+                        <div class="mt-4 border-t border-gray-200 pt-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                // DomeSeeing video (left side)
+                                <Show when=move || config.get().domeseeing>
+                                    {move || {
+                                        let (video_title, video_id) = get_domeseeing_video();
+                                        view! {
+                                            <div>
+                                                <h4 class="text-md font-medium text-gray-700 mb-3">
+                                                    "Gradient of the Index of Refraction"
+                                                </h4>
+                                                <div class="relative w-full" style="padding-bottom: 56.25%;">
+                                                    <iframe
+                                                        class="absolute top-0 left-0 w-full h-full rounded-lg shadow-md"
+                                                        src=format!("https://www.youtube.com/embed/{video_id}")
+                                                        title=format!("CFD Data Visualization: {}", video_title)
+                                                        style="border: 0;"
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                        allowfullscreen=true
+                                                    >
+                                                    </iframe>
+                                                </div>
+                                            </div>
+                                        }
+                                    }}
+                                </Show>
+                                
+                                // Windloads video (right side)
+                                <Show when=move || config.get().windloads>
+                                    {move || {
+                                        let (video_title, video_id) = get_windloads_video();
+                                        view! {
+                                            <div>
+                                                <h4 class="text-md font-medium text-gray-700 mb-3">
+                                                    "Vorticity"
+                                                </h4>
+                                                <div class="relative w-full" style="padding-bottom: 56.25%;">
+                                                    <iframe
+                                                        class="absolute top-0 left-0 w-full h-full rounded-lg shadow-md"
+                                                        src=format!("https://www.youtube.com/embed/{video_id}")
+                                                        title=format!("CFD Data Visualization: {}", video_title)
+                                                        style="border: 0;"
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                        allowfullscreen=true
+                                                    >
+                                                    </iframe>
+                                                </div>
+                                            </div>
+                                        }
+                                    }}
+                                </Show>
+                            </div>
+                        </div>
                     </Show>
                 </fieldset>
     }
