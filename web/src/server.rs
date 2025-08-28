@@ -4,6 +4,10 @@ use leptos::prelude::*;
 
 use crate::components::{form_controls::PsfConfig, psf_generator::GeneratedImage};
 
+#[cfg(feature = "ssr")]
+static FRAME_ID: std::sync::LazyLock<std::sync::atomic::AtomicUsize> =
+    std::sync::LazyLock::new(|| std::sync::atomic::AtomicUsize::new(0));
+
 #[server]
 pub async fn psf_generation(
     config: PsfConfig,
@@ -14,9 +18,9 @@ pub async fn psf_generation(
         CFD_YEAR,
     };
     use psf::{get_enclosure_config, GmtOpticalModel, PSFs, ZenithAngle};
-    use std::{env, fs::create_dir_all, path::Path, time::Instant};
+    use std::{env, fs::create_dir_all, path::Path, sync::atomic::Ordering, time::Instant};
+    use crate::N_SAMPLE;
 
-    const N_SAMPLE: usize = 100;
 
     let now = Instant::now();
 
@@ -82,6 +86,7 @@ pub async fn psf_generation(
     let mut psfs = PSFs::from(&gmt);
 
     for i in 0..N_SAMPLE {
+        FRAME_ID.store(i, Ordering::Relaxed);
         psfs.push(
             gmt.ray_trace()
                 .read_detector()
@@ -140,4 +145,9 @@ pub async fn psf_animation(output_dir: PathBuf) -> Result<GeneratedImage, Server
 
         description: "GMT short exposure CFD PSFs animation".to_string(),
     })
+}
+
+#[server]
+pub async fn get_frame_id() -> Result<usize, ServerFnError> {
+    Ok(FRAME_ID.load(std::sync::atomic::Ordering::Relaxed))
 }
