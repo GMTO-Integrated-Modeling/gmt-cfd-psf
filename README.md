@@ -1,13 +1,15 @@
-#  CFD Dome Seeing & Wind Loads PSFs
+#  CFD Dome Seeing & Wind Loads PSFs generator
 
-## Cli
+Application to generate GMT PSFs under dome seeing and wind loads pertubations.
 
-```shell
-mount-s3 --cache ~/.s3-cache/ maua.cfd.2025 ~/maua/
-mount-s3 --cache ~/.s3-cache/ gmto.im.grim ~/mnt
-export CUDACXX=/usr/local/cuda/bin/nvcc
-export FEM_REPO=~/mnt/20250506_1715_zen_30_M1_202110_FSM_202305_Mount_202305_pier_202411_M1_actDamping/
-export CFD_REPO=~/maua/CASES/
-export GMT_MODES_PATH=~/Dropbox/AWS/CEO/gmtMirrors/
-cargo r -r -- --help
-```
+To compile the applications several environment variables need to be defined:
+ - CUDACXX : CUDA nvcc compiler full command path
+ - FEM_REPO : path to the GMT FEM repository that holds the windloads data files
+ - CFD_REPO : path to the repository where all the CFD cases are saved
+ - GMT_MODES_PATH : path to CEO mirror modes (.ceo) data fils
+
+For later use, export all the environment variables into a `.setup` file and source them with `. .setup`.
+`.gitignore` is configured to ignore `.setup` files.
+
+There are 2 applications available: a [cli](cli/README.md) application and a [Web](web/README.md) application.
+

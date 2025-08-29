@@ -80,7 +80,7 @@ fn main() -> anyhow::Result<()> {
     let zenith = u32::from(args.zenith_angle);
     let azimuth = u32::from(args.azimuth_angle);
     let wind_speed = u32::from(args.wind_speed);
-    let enclosure = get_enclosure_config(wind_speed, zenith);
+    let enclosure = get_enclosure_config(wind_speed, args.zenith_angle);
 
     println!("CFD Configuration:");
     println!("  Zenith angle: {}°", zenith);

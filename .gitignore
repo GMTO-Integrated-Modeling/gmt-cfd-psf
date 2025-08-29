@@ -5,3 +5,4 @@ frames/
 *.json
 .aider.*
 !web/assets/*.png
+.setup
