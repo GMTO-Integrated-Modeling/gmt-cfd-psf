@@ -509,11 +509,11 @@ pub fn ConfigForm(config: RwSignal<PsfConfig>, on_submit: impl Fn() + 'static) -
                         // Azimuth Angle
                         <AzimuthAngle config=config/>
 
-                        // Zenith Angle
-                        <ElevationAngle config=config/>
-
                         // Wind Speed
                         <WindSpeed config=config/>
+
+                        // Zenith Angle
+                        <ElevationAngle config=config/>
 
                         // // Vents
                         // <Vents config=config/>

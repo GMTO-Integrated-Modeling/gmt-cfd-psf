@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{env, path::PathBuf};
 
 use leptos::prelude::*;
 
@@ -27,9 +27,10 @@ pub async fn psf_generation(
         time::Instant,
     };
 
-    let store: Arc<dyn ObjectStore> = Arc::new(
-        object_store::local::LocalFileSystem::new_with_prefix("/home/rconan/maua")?,
-    );
+    let store: Arc<dyn ObjectStore> =
+        Arc::new(object_store::local::LocalFileSystem::new_with_prefix(
+            format!("{}/maua", env::var("HOME")?),
+        )?);
 
     let now = Instant::now();
 
@@ -130,7 +131,7 @@ pub async fn psf_generation(
         psfs.len(),
         output_dir
     );
-    Ok(images)
+    Ok(dbg!(images))
 }
 #[server]
 pub async fn psf_animation(output_dir: PathBuf) -> Result<GeneratedImage, ServerFnError> {
