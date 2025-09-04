@@ -7,7 +7,7 @@ edition = "2024"
 ab_glyph = { version = "0.2.31", optional = true }
 colorous = { version = "1.0.16", optional = true }
 crseo = { version = "2.5.2", optional = true }
-gmt-lom = { version = "2.4.2", features = ["apache"], optional = true }
+gmt-lom = { version = "2.6.1", features = ["apache"], optional = true }
 gmt_dos-clients_domeseeing = { version = "3.0.2", features = [
   "npyz",
 ], default-features = false, optional = true }
@@ -20,6 +20,7 @@ indicatif = { workspace = true, optional = true }
 clap = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 cfg-if = "1.0.3"
+object_store.workspace = true
 
 [workspace]
 members = ["cli", "web", "youtube-playlist-fetcher"]
@@ -30,6 +31,8 @@ indicatif = "0.18.0"
 parse-monitors = { git = "https://github.com/rconan/parse-monitors.git", branch = "cfd2025", version = "0.3.2" }
 clap = { version = "4.5.45", features = ["derive"] }
 serde = { version = "1.0.219", features = ["derive"] }
+object_store = { version = "0.12.3", features = ["aws"] }
+tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 
 [features]
 ssr = [
@@ -43,7 +46,7 @@ ssr = [
   "dep:nalgebra",
   "dep:skyangle",
   "dep:thiserror",
-  "dep:indicatif"
+  "dep:indicatif",
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode

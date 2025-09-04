@@ -1,7 +1,6 @@
-use std::path::Path;
-
-use gmt_lom::{LinearOpticalModelError, RigidBodyMotions};
+use gmt_lom::{LinearOpticalModelError, RigidBodyMotions, Table};
 use nalgebra::DMatrix;
+use object_store::{ObjectStore, path::Path};
 
 #[derive(Debug, thiserror::Error)]
 pub enum WindLoadsError {
@@ -21,9 +20,10 @@ impl WindLoads {
     // reaching steady state after 3s
     // The 1st 5s (5000 samples) are skipped and the RBMs are
     // downsampled by a factor 1000Hz/5Hz=200
-    pub fn new(path: impl AsRef<Path>) -> Result<Self> {
-        let rbms = RigidBodyMotions::from_parquet(
-            path,
+    pub async fn new(storage: impl ObjectStore, path: impl Into<Path>) -> Result<Self> {
+        let table = Table::from_stored_parquet(storage, path.into()).await?;
+        let rbms = RigidBodyMotions::from_table(
+            &table,
             Some("M1RigidBodyMotions"),
             Some("M2RigidBodyMotions"),
         )?

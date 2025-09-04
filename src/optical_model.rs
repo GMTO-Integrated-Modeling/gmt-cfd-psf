@@ -6,6 +6,7 @@ use crseo::{
     pssn::{PSSnBuilder, TelescopeError},
 };
 use gmt_dos_clients_domeseeing::{DomeSeeing, DomeSeeingError};
+use object_store::ObjectStore;
 use skyangle::Conversion;
 
 use crate::{Config, DETECTOR_SIZE, PSF, PSFs, optical_model::windloads::WindLoadsError};
@@ -103,8 +104,12 @@ impl GmtOpticalModel {
         self.domeseeing = Some(DomeSeeing::builder(cfd_path).build()?);
         Ok(self)
     }
-    pub fn windloads(mut self, rbms_path: impl AsRef<Path>) -> Result<Self> {
-        self.windloads = Some(WindLoads::new(rbms_path)?);
+    pub async fn windloads(
+        mut self,
+        storage: impl ObjectStore,
+        rbms_path: impl Into<object_store::path::Path>,
+    ) -> Result<Self> {
+        self.windloads = Some(WindLoads::new(storage, rbms_path).await?);
         Ok(self)
     }
     pub fn ray_trace(&mut self) -> &mut Self {
