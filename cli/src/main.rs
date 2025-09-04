@@ -14,11 +14,14 @@ use std::{env, fs::create_dir_all, path::Path, time::Instant};
 
 use clap::{Parser, ValueEnum};
 use indicatif::{ProgressBar, ProgressStyle};
+use object_store::{aws::AmazonS3Builder, path::Path as ObjectPath};
 use parse_monitors::{
     CFD_YEAR,
     cfd::{Baseline, BaselineTrait, CfdCase},
 };
-use psf::{AzimuthAngle, GmtOpticalModel, PSFs, WindSpeed, ZenithAngle, get_enclosure_config};
+use psf::{
+    AzimuthAngle, GmtOpticalModel, PSFs, StorePath, WindSpeed, ZenithAngle, get_enclosure_config,
+};
 
 const N_SAMPLE: usize = 100;
 
@@ -37,8 +40,8 @@ struct Args {
     domeseeing: bool,
 
     /// Enable wind loads effects
-    #[arg(long)]
-    windloads: bool,
+    #[arg(long, value_enum, require_equals = true)]
+    windloads: Option<Option<WindLoadsOptions>>,
 
     /// Zenith angle in degrees (0, 30, or 60)
     #[arg(long, value_enum, default_value_t = ZenithAngle::Thirty)]
@@ -52,12 +55,28 @@ struct Args {
     #[arg(long, value_enum, default_value_t = WindSpeed::Seven)]
     wind_speed: WindSpeed,
 }
+#[derive(Debug, Clone, ValueEnum)]
+enum WindLoadsOptions {
+    /// Compensate the segment tip-tilt with the FSM
+    Fsm,
+    /// Compensate the segment piston and tip-tilt with the ASM
+    Asm,
+}
 
-fn main() -> anyhow::Result<()> {
+static REGION: &str = "us-west-2";
+static BUCKET: &str = "gmto.im.grim";
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     env_logger::init();
 
     // Parse command line arguments
     let args = Args::parse();
+
+    let s3_store = AmazonS3Builder::from_env()
+        .with_region(REGION)
+        .with_bucket_name(BUCKET)
+        .build()?;
 
     // Setup GMT optics and imaging
     let mut gmt = GmtOpticalModel::new()?;
@@ -67,11 +86,15 @@ fn main() -> anyhow::Result<()> {
     println!("Saved frame0 as psf.png");
 
     // Generate turbulence effects string
-    let turbulence_effects = match (args.domeseeing, args.windloads) {
-        (true, true) => Some("Dome Seeing + Wind Loads"),
-        (true, false) => Some("Dome Seeing"),
-        (false, true) => Some("Wind Loads"),
-        (false, false) => return Ok(()),
+    let turbulence_effects = match (args.domeseeing, args.windloads.as_ref()) {
+        (true, Some(None)) => Some("Dome Seeing + Wind Loads"),
+        (true, Some(Some(WindLoadsOptions::Fsm))) => Some("Dome Seeing + (Wind Loads + FSM)"),
+        (true, Some(Some(WindLoadsOptions::Asm))) => Some("Dome Seeing + (Wind Loads + ASM)"),
+        (true, None) => Some("Dome Seeing"),
+        (false, Some(None)) => Some("Wind Loads"),
+        (false, Some(Some(WindLoadsOptions::Fsm))) => Some("Wind Loads + FSM"),
+        (false, Some(Some(WindLoadsOptions::Asm))) => Some("Wind Loads + ASM"),
+        (false, None) => return Ok(()),
     };
 
     turbulence_effects.map(|value| gmt.set_config(gmt.get_config().turbulence_effects(value)));
@@ -98,14 +121,22 @@ fn main() -> anyhow::Result<()> {
         gmt
     };
 
-    let mut gmt = if args.windloads {
-        let rbms_path = Path::new(&env::var("FEM_REPO")?)
-            .join("cfd")
-            .join(cfd_case.to_string())
-            .join("m1_m2_rbms.parquet");
-        gmt.windloads(rbms_path)?
-    } else {
-        gmt
+    let mut gmt = match args.windloads.as_ref() {
+        None => gmt,
+        Some(m2) => {
+            let object = match m2 {
+                Some(m2) => match m2 {
+                    WindLoadsOptions::Fsm => "m1_m2_rbms.FSM.parquet",
+                    WindLoadsOptions::Asm => "m1_m2_rbms.ASM.parquet",
+                },
+                None => "m1_m2_rbms.parquet",
+            };
+            let rbms_path = ObjectPath::new(env::var("FEM")?)
+                .join("cfd")
+                .join(cfd_case.to_string())
+                .join(object);
+            gmt.windloads(s3_store.clone(), rbms_path).await?
+        }
     };
 
     // Setup output directory

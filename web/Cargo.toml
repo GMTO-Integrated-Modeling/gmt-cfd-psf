@@ -22,10 +22,7 @@ gloo-net = "0.6.0"
 gloo-timers = { version = "0.3.0", features = ["futures"] }
 futures = "0.3.31"
 serde_json = "1.0.143"
-tokio = { version = "1.47.1", optional = true, features = [
-  "macros",
-  "rt-multi-thread",
-] }
+tokio = { workspace = true, optional = true }
 parse-monitors = { workspace = true, optional = true }
 psf = { version = "0.1.0", path = "..", package = "gmt-cfd-psf", features = [
   "serde",
@@ -43,7 +40,7 @@ ssr = [
   "leptos_router/ssr",
   "dep:tokio",
   "dep:parse-monitors",
-  "psf/ssr"
+  "psf/ssr",
   # "dep:psf",
 ]
 tokio = ["dep:tokio"]
