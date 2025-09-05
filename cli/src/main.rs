@@ -61,6 +61,8 @@ enum WindLoadsOptions {
     Fsm,
     /// Compensate the segment piston and tip-tilt with the ASM
     Asm,
+    /// Compensate the segment piston (updated RTF) and tip-tilt with the ASM
+    Asm2,
 }
 
 static REGION: &str = "us-west-2";
@@ -86,14 +88,18 @@ async fn main() -> anyhow::Result<()> {
     println!("Saved frame0 as psf.png");
 
     // Generate turbulence effects string
-    let turbulence_effects = match (args.domeseeing, args.windloads.as_ref()) {
-        (true, Some(None)) => Some("Dome Seeing + Wind Loads"),
-        (true, Some(Some(WindLoadsOptions::Fsm))) => Some("Dome Seeing + (Wind Loads + FSM)"),
-        (true, Some(Some(WindLoadsOptions::Asm))) => Some("Dome Seeing + (Wind Loads + ASM)"),
-        (true, None) => Some("Dome Seeing"),
-        (false, Some(None)) => Some("Wind Loads"),
-        (false, Some(Some(WindLoadsOptions::Fsm))) => Some("Wind Loads + FSM"),
-        (false, Some(Some(WindLoadsOptions::Asm))) => Some("Wind Loads + ASM"),
+    let windloads_tag = args.windloads.as_ref().map(|windloads| match windloads {
+        Some(options) => match options {
+            WindLoadsOptions::Fsm => "Wind Loads + FSM",
+            WindLoadsOptions::Asm => "Wind Loads + ASM",
+            WindLoadsOptions::Asm2 => "Wind Loads + ASM2",
+        },
+        None => "WindLoads",
+    });
+    let turbulence_effects = match (args.domeseeing, windloads_tag) {
+        (true, None) => Some("Dome Seeing + Wind Loads".to_string()),
+        (true, Some(tag)) => Some(format!("Dome Seeing + ({tag})")),
+        (false, Some(tag)) => Some(tag.to_string()),
         (false, None) => return Ok(()),
     };
 
@@ -128,6 +134,7 @@ async fn main() -> anyhow::Result<()> {
                 Some(m2) => match m2 {
                     WindLoadsOptions::Fsm => "m1_m2_rbms.FSM.parquet",
                     WindLoadsOptions::Asm => "m1_m2_rbms.ASM.parquet",
+                    WindLoadsOptions::Asm2 => "m1_m2_rbms.ASM.2.parquet",
                 },
                 None => "m1_m2_rbms.parquet",
             };
