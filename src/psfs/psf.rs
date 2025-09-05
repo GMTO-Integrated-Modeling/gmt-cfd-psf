@@ -14,6 +14,7 @@ frames with associated metadata and rendering capabilities.
 */
 
 use std::{
+    iter,
     path::{Path, PathBuf},
     rc::Rc,
 };
@@ -30,6 +31,9 @@ pub enum PSFError {
     /// Failed to create RGB image buffer from PSF data
     #[error("Failed to create image buffer")]
     Image,
+    /// Missing OPD in PSF
+    #[error("Expect some OPDs, found None")]
+    OpdMissing,
     /// Failed to save PSF image to file
     #[error("Failed to save PSD to png file {1:?}")]
     Save(#[source] ImageError, PathBuf),
@@ -61,6 +65,7 @@ pub struct PSF {
     pub(crate) frame: Vec<f32>,
     pub(crate) pssn_value: Option<f64>,
     pub(crate) frame_number: Option<usize>,
+    pub(crate) opd: Option<Vec<f32>>,
     pub(crate) config: Rc<Config>,
 }
 impl PSF {
@@ -93,6 +98,11 @@ impl PSF {
     /// PSF instance with PSSN metadata for text overlay rendering
     pub fn pssn_value(mut self, value: f64) -> Self {
         self.pssn_value = Some(value);
+        self
+    }
+
+    pub fn opd(mut self, opd: &[f32]) -> Self {
+        self.opd = Some(opd.to_vec());
         self
     }
 
@@ -140,6 +150,27 @@ impl PSF {
                 [color.r, color.g, color.b]
             })
             .collect()
+    }
+    fn opd_to_rgb(&self, min_val: f32, max_val: f32) -> Result<Vec<u8>> {
+        let Some(opd) = self.opd.as_ref() else {
+            return Err(PSFError::OpdMissing);
+        };
+        let range = max_val - min_val;
+        let normalized: Vec<f64> = if range > 0.0 {
+            opd.iter()
+                .map(|&x| ((x - min_val) / range) as f64)
+                .collect()
+        } else {
+            vec![0.5f64; opd.len()]
+        };
+
+        Ok(normalized
+            .iter()
+            .flat_map(|&value| {
+                let color = colorous::SPECTRAL.eval_continuous(value);
+                [color.r, color.g, color.b]
+            })
+            .collect())
     }
     /// Export PSF frame as annotated PNG image with local normalization
     ///
@@ -191,7 +222,7 @@ impl PSF {
         } = &*self.config;
 
         let (min_val, max_val) =
-            minmax.unwrap_or_else(|| find_global_extrema(&[self.frame.as_slice()]));
+            minmax.unwrap_or_else(|| find_global_extrema(iter::once(self.frame.as_slice())));
 
         let rgb_data = self.frame_to_rgb(min_val, max_val);
         let mut image = ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(
@@ -220,6 +251,30 @@ impl PSF {
             self.config
                 .draw_pssn_text(&mut image, pssn, self.frame_number)?;
         }
+
+        image
+            .save(&filename)
+            .map_err(|e| PSFError::Save(e, filename.as_ref().to_path_buf()))?;
+        Ok(())
+    }
+    pub fn save_opd_as_png(
+        &self,
+        filename: impl AsRef<Path>,
+        minmax: Option<(f32, f32)>,
+    ) -> Result<()> {
+        let Some(opd) = self.opd.as_ref().map(|opd| opd.as_slice()) else {
+            return Err(PSFError::OpdMissing);
+        };
+
+        let (min_val, max_val) = minmax.unwrap_or_else(|| find_global_extrema(iter::once(opd)));
+
+        let rgb_data = self.opd_to_rgb(min_val, max_val)?;
+        let n = (opd.len() as f32).sqrt() as u32;
+        let mut image = ImageBuffer::<Rgb<u8>, Vec<u8>>::from_raw(n, n, rgb_data)
+            .ok_or_else(|| PSFError::Image)?;
+
+        self.config
+            .draw_opd_text(&mut image, self.frame_number, Some((min_val, max_val)))?;
 
         image
             .save(&filename)

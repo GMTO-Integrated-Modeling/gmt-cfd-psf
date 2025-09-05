@@ -140,6 +140,9 @@ impl GmtOpticalModel {
         self.imgr.reset();
         PSF::new(&self.config, frame)
     }
+    pub fn get_opd(&self) -> &[f32] {
+        self.src.phase().as_slice()
+    }
 }
 impl From<&GmtOpticalModel> for PSFs {
     fn from(gmt: &GmtOpticalModel) -> Self {

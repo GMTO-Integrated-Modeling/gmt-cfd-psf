@@ -16,7 +16,8 @@ use std::{
     fs::create_dir_all,
     io,
     path::{Path, PathBuf},
-    rc::Rc, sync::atomic::AtomicUsize,
+    rc::Rc,
+    sync::atomic::AtomicUsize,
 };
 
 use indicatif::{ProgressBar, ProgressStyle};
@@ -72,18 +73,12 @@ pub struct PSFs {
 /// # Returns
 ///
 /// Tuple of (global_min, global_max) values across all frames
-pub fn find_global_extrema(frames: &[&[f32]]) -> (f32, f32) {
-    let global_max = frames
-        .iter()
+pub fn find_global_extrema<'a>(frames: impl Iterator<Item = &'a [f32]>) -> (f32, f32) {
+    frames
         .flat_map(|frame| frame.iter())
-        .copied()
-        .fold(f32::NEG_INFINITY, f32::max);
-    let global_min = frames
-        .iter()
-        .flat_map(|frame| frame.iter())
-        .copied()
-        .fold(f32::INFINITY, f32::min);
-    (global_min, global_max)
+        .fold((f32::INFINITY, f32::NEG_INFINITY), |(min, max), f| {
+            (f.min(min), f.max(max))
+        })
 }
 impl PSFs {
     /// Create a new PSF collection with shared configuration
@@ -147,7 +142,14 @@ impl PSFs {
     /// Result indicating success or failure of the batch export operation
     pub fn save_all_frames(&self, path: impl AsRef<Path>) -> Result<(), PSFsError> {
         let frames: Vec<_> = self.psfs.iter().map(|psf| psf.frame.as_slice()).collect();
-        let global_minmax = find_global_extrema(&frames);
+        let frames_global_minmax = find_global_extrema(frames.into_iter());
+        let opds: Option<Vec<&[f32]>> = self
+            .psfs
+            .iter()
+            .map(|psf| psf.opd.as_ref().map(|opd| opd.as_slice()))
+            .collect();
+        let ops_global_minmax = opds.map(|opds| find_global_extrema(opds.into_iter()));
+
         let n_frame = self.psfs.len();
 
         // Create progress bar for saving frames
@@ -167,16 +169,29 @@ impl PSFs {
 
         for (i, psf) in self.psfs.iter().enumerate() {
             let filename = frames_dir.join(format!("frame_{:06}.png", i));
-            psf.save_frame_as_png(filename, Some(global_minmax))?;
+            psf.save_frame_as_png(filename, Some(frames_global_minmax))?;
+            if let Err(e) = psf.save_opd_as_png(
+                frames_dir.join(format!("opd_{:06}.png", i)),
+                ops_global_minmax,
+            ) {
+                match e {
+                    PSFError::OpdMissing => (),
+                    _ => return Err(e.into())
+                }
+            }
             save_pb.inc(1);
         }
 
         save_pb.finish_with_message("All frames saved");
         Ok(())
     }
-    pub fn save_all_frames_with_atomic_index(&self, path: impl AsRef<Path>, idx: &AtomicUsize) -> Result<(), PSFsError> {
+    pub fn save_all_frames_with_atomic_index(
+        &self,
+        path: impl AsRef<Path>,
+        idx: &AtomicUsize,
+    ) -> Result<(), PSFsError> {
         let frames: Vec<_> = self.psfs.iter().map(|psf| psf.frame.as_slice()).collect();
-        let global_minmax = find_global_extrema(&frames);
+        let global_minmax = find_global_extrema(frames.into_iter());
 
         // Setup output directory
         let frames_dir = Path::new(path.as_ref());

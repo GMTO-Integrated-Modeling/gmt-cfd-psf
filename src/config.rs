@@ -13,7 +13,7 @@ and metadata overlays for scientific visualization.
 - Builder pattern for flexible configuration
 */
 
-use std::rc::Rc;
+use std::{f32, rc::Rc};
 
 use ab_glyph::{FontRef, InvalidFont};
 use image::{Rgb, RgbImage};
@@ -161,14 +161,14 @@ impl Config {
 
         // Draw CFD case if provided
         if let Some(case) = &self.cfd_case {
-            let cfd_text = format!("CFD: {}", case);
+            let cfd_text = format!("{}", case);
             draw_text_mut(image, white, x, y, scale, &font, &cfd_text);
             y += 30;
         }
 
         // Draw turbulence effects if provided
         if let Some(effects) = &self.turbulence_effects {
-            let effects_text = format!("Effects: {}", effects);
+            let effects_text = format!("{}", effects);
             draw_text_mut(image, white, x, y, scale, &font, &effects_text);
             y += 30;
         }
@@ -182,6 +182,72 @@ impl Config {
             y += 30; // Move down for next line
             let frame_text = format!("frame {:03}", frame_num);
             draw_text_mut(image, white, x, y, scale, &font, &frame_text);
+        }
+
+        Ok(())
+    }
+    pub fn draw_opd_text(
+        &self,
+        image: &mut RgbImage,
+        frame_number: Option<usize>,
+        min_max: Option<(f32, f32)>,
+    ) -> Result<(), ConfigError> {
+        // Use system default font (typically DejaVu Sans on Linux)
+        let font_data: &[u8] = include_bytes!("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+        let font = FontRef::try_from_slice(font_data)?;
+
+        let scale = 15.0; //Scale::uniform(20.0); // 24 pixel font
+        let text_color = Rgb([5u8, 5u8, 5u8]);
+
+        // Position in top left corner with some padding
+        let x = 5i32;
+        let mut y = 5i32;
+
+        // Draw CFD case if provided
+        if let Some(case) = &self.cfd_case {
+            let cfd_text = format!("{}", case);
+            draw_text_mut(image, text_color, x, y, scale, &font, &cfd_text);
+            y += 20;
+        }
+
+        // Draw turbulence effects if provided
+        if let Some(effects) = &self.turbulence_effects {
+            let effects_text = format!("{}", effects);
+            draw_text_mut(image, text_color, x, y, scale, &font, &effects_text);
+            y += 20;
+        }
+
+        // Draw the global extremas off the OPD set
+        if let Some((min, max)) = min_max {
+            let text = format!("Min/Max: [{:.0},{:.0}]nm", min * 1e9, max * 1e9);
+            draw_text_mut(image, text_color, x, y, scale, &font, &text);
+            y += 20;
+        }
+
+        // Draw frame number if provided
+        if let Some(frame_num) = frame_number {
+            let frame_text = format!("T={:05.2}s", frame_num as f32 * 0.2);
+            draw_text_mut(image, text_color, x, y, scale, &font, &frame_text);
+        }
+
+        // Draw the segment ID #
+        let r = 5.5 * image.width() as f32 / 25.5;
+        for i in 0..6 {
+            let o = (i as f32 + 1.5) * std::f32::consts::FRAC_PI_3;
+            let (mut y, mut x) = o.sin_cos();
+            x *= r;
+            x += 0.5 * image.width() as f32;
+            y *= r;
+            y += 0.5 * image.width() as f32;
+            draw_text_mut(
+                image,
+                Rgb([5, 5, 5]),
+                x.round() as i32,
+                y.round() as i32,
+                10.,
+                &font,
+                &format!("{}", i + 1),
+            );
         }
 
         Ok(())

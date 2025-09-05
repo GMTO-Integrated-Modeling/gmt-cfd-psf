@@ -12,6 +12,7 @@ cargo r -r -- --help
 
 use std::{env, fs::create_dir_all, path::Path, time::Instant};
 
+use anyhow::anyhow;
 use clap::{Parser, ValueEnum};
 use indicatif::{ProgressBar, ProgressStyle};
 use object_store::{aws::AmazonS3Builder, path::Path as ObjectPath};
@@ -40,7 +41,7 @@ struct Args {
     domeseeing: bool,
 
     /// Enable wind loads effects
-    #[arg(long, value_enum, require_equals = true)]
+    #[arg(long, value_enum)]
     windloads: Option<Option<WindLoadsOptions>>,
 
     /// Zenith angle in degrees (0, 30, or 60)
@@ -54,6 +55,10 @@ struct Args {
     /// Wind speed in m/s (2, 7, 12, or 17)
     #[arg(long, value_enum, default_value_t = WindSpeed::Seven)]
     wind_speed: WindSpeed,
+
+    /// Writes the OPD map of the corresponding PSF to a png image
+    #[arg(long)]
+    opd: bool,
 }
 #[derive(Debug, Clone, ValueEnum)]
 enum WindLoadsOptions {
@@ -90,17 +95,17 @@ async fn main() -> anyhow::Result<()> {
     // Generate turbulence effects string
     let windloads_tag = args.windloads.as_ref().map(|windloads| match windloads {
         Some(options) => match options {
-            WindLoadsOptions::Fsm => "Wind Loads + FSM",
-            WindLoadsOptions::Asm => "Wind Loads + ASM",
-            WindLoadsOptions::Asm2 => "Wind Loads + ASM2",
+            WindLoadsOptions::Fsm => "(Wind Loads - FSM)",
+            WindLoadsOptions::Asm => "(Wind Loads - ASM)",
+            WindLoadsOptions::Asm2 => "(Wind Loads - ASM2)",
         },
         None => "WindLoads",
     });
     let turbulence_effects = match (args.domeseeing, windloads_tag) {
-        (true, None) => Some("Dome Seeing + Wind Loads".to_string()),
-        (true, Some(tag)) => Some(format!("Dome Seeing + ({tag})")),
+        (true, None) => Some("Dome Seeing".to_string()),
+        (true, Some(tag)) => Some(format!("Dome Seeing + {tag}")),
         (false, Some(tag)) => Some(tag.to_string()),
-        (false, None) => return Ok(()),
+        (false, None) => return Err(anyhow!("you must select either domeseeing or windloads")),
     };
 
     turbulence_effects.map(|value| gmt.set_config(gmt.get_config().turbulence_effects(value)));
@@ -164,13 +169,25 @@ async fn main() -> anyhow::Result<()> {
     );
     process_pb.set_message("Processing PSF frames");
 
-    for _ in 0..N_SAMPLE {
-        psfs.push(
-            gmt.ray_trace()
-                .read_detector()
-                .pssn_value(gmt.compute_pssn()),
-        );
-        process_pb.inc(1);
+    if args.opd {
+        for _ in 0..N_SAMPLE {
+            psfs.push(
+                gmt.ray_trace()
+                    .read_detector()
+                    .opd(gmt.get_opd())
+                    .pssn_value(gmt.compute_pssn()),
+            );
+            process_pb.inc(1);
+        }
+    } else {
+        for _ in 0..N_SAMPLE {
+            psfs.push(
+                gmt.ray_trace()
+                    .read_detector()
+                    .pssn_value(gmt.compute_pssn()),
+            );
+            process_pb.inc(1);
+        }
     }
 
     process_pb.finish_with_message("PSF processing complete");
@@ -189,8 +206,14 @@ async fn main() -> anyhow::Result<()> {
     println!("🖼️  Reference PSF saved as psf.png");
     println!("🖼️  Long exposure PSF saved as long_exposure_psf.png");
     println!();
-    println!("🎬 To create an animated GIF at 5Hz, run:");
-    println!("   convert -delay 20 -loop 0 frames/frame_*.png psf_animation.gif");
-
+    if args.opd{
+            println!("🎬 To create animated GIFs at 5Hz, run:");
+            println!("   convert -delay 20 -loop 0 frames/frame_*.png psf_animation.gif ; \\");
+            println!("   convert -delay 20 -loop 0 frames/opd_*.png opd_animation.gif");
+        }
+        else {
+            println!("🎬 To create an animated GIF at 5Hz, run:");
+            println!("   convert -delay 20 -loop 0 frames/frame_*.png psf_animation.gif");
+    };
     Ok(())
 }
