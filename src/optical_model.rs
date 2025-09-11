@@ -1,4 +1,4 @@
-use std::{path::Path, rc::Rc};
+use std::rc::Rc;
 
 use crseo::{
     Atmosphere, Builder, CrseoError, FromBuilder, Gmt, Imaging, PSSn, PSSnEstimates, Source,
@@ -6,7 +6,7 @@ use crseo::{
     pssn::{PSSnBuilder, TelescopeError},
 };
 use gmt_dos_clients_domeseeing::{DomeSeeing, DomeSeeingError};
-use object_store::ObjectStore;
+use object_store::{ObjectStore, path::Path};
 use skyangle::Conversion;
 
 use crate::{Config, DETECTOR_SIZE, PSF, PSFs, optical_model::windloads::WindLoadsError};
@@ -103,8 +103,12 @@ impl GmtOpticalModel {
     pub fn gmt(&mut self) -> &mut Gmt {
         &mut self.gmt
     }
-    pub fn domeseeing(mut self, cfd_path: impl AsRef<Path>) -> Result<Self> {
-        self.domeseeing = Some(DomeSeeing::builder(cfd_path).build()?);
+    pub async fn domeseeing(
+        mut self,
+        store: impl ObjectStore,
+        cfd_path: impl Into<Path>,
+    ) -> Result<Self> {
+        self.domeseeing = Some(DomeSeeing::builder(cfd_path).store(store).build().await?);
         Ok(self)
     }
     pub async fn windloads(

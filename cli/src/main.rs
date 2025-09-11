@@ -141,8 +141,9 @@ async fn main() -> anyhow::Result<()> {
     gmt.set_config(gmt.get_config().cfd_case(cfd_case));
 
     let gmt = if args.domeseeing {
-        let cfd_path = Baseline::<CFD_YEAR>::path()?.join(cfd_case.to_string());
-        gmt.domeseeing(cfd_path)?
+        let cfd_path = ObjectPath::from(Baseline::<CFD_YEAR>::path()?.to_str().unwrap())
+            .join(cfd_case.to_string());
+        gmt.domeseeing(store.clone(), cfd_path).await?
     } else {
         gmt
     };

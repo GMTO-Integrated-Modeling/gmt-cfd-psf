@@ -2124,17 +2124,20 @@ dependencies = [
 
 [[package]]
 name = "gmt_dos-clients_domeseeing"
-version = "3.0.2"
+version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51df44b7d36c8bb07301e3b674f19b5f6b54aa1dd1cc805c5cce9a7ae717d6fb"
+checksum = "e511385404b8d0bae5a699f4c527a700e27316beee3813e622c51079f640cce1"
 dependencies = [
+ "futures",
  "glob",
  "gmt_dos-actors-clients_interface",
  "gmt_dos-clients_io",
  "log",
  "npyz",
+ "object_store",
  "serde",
- "thiserror 1.0.69",
+ "thiserror 2.0.16",
+ "tokio",
 ]
 
 [[package]]
