@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+dotenvy = "0.15.7"
 env_logger = "0.11.8"
 indicatif.workspace = true
 object_store.workspace = true
@@ -14,3 +15,6 @@ psf = { version = "0.1.0", path = "..", package = "gmt-cfd-psf", features = [
   "clap","ssr",
 ] }
 tokio.workspace = true
+
+[features]
+s3 = ["object_store/aws"]

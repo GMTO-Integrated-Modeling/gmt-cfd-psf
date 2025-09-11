@@ -10,12 +10,12 @@ cargo r -r -- --help
 ```
 */
 
-use std::{env, fs::create_dir_all, path::Path, time::Instant};
+use std::{env, fs::create_dir_all, path::Path, sync::Arc, time::Instant};
 
 use anyhow::anyhow;
 use clap::{Parser, ValueEnum};
 use indicatif::{ProgressBar, ProgressStyle};
-use object_store::{aws::AmazonS3Builder, path::Path as ObjectPath};
+use object_store::{ObjectStore, path::Path as ObjectPath};
 use parse_monitors::{
     CFD_YEAR,
     cfd::{Baseline, BaselineTrait, CfdCase},
@@ -76,9 +76,6 @@ enum WindLoadsOptions {
     Asm2,
 }
 
-static REGION: &str = "us-west-2";
-static BUCKET: &str = "gmto.im.grim";
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     env_logger::init();
@@ -86,10 +83,22 @@ async fn main() -> anyhow::Result<()> {
     // Parse command line arguments
     let args = Args::parse();
 
-    let s3_store = AmazonS3Builder::from_env()
-        .with_region(REGION)
-        .with_bucket_name(BUCKET)
-        .build()?;
+    #[cfg(feature = "s3")]
+    dotenvy::from_filename(".env_s3")?;
+    #[cfg(not(feature = "s3"))]
+    dotenvy::dotenv()?;
+
+    #[cfg(feature = "s3")]
+    let store: Arc<dyn ObjectStore> = Arc::new(
+        object_store::aws::AmazonS3Builder::from_env()
+            .with_region(env::var("REGION")?)
+            .with_bucket_name(env::var("BUCKET")?)
+            .build()?,
+    );
+    #[cfg(not(feature = "s3"))]
+    let store: Arc<dyn ObjectStore> = Arc::new(
+        object_store::local::LocalFileSystem::new_with_prefix("/home/rconan/maua")?,
+    );
 
     // Setup GMT optics and imaging
     let mut gmt = GmtOpticalModel::new()?;
@@ -153,7 +162,7 @@ async fn main() -> anyhow::Result<()> {
                 .join("cfd")
                 .join(cfd_case.to_string())
                 .join(object);
-            gmt.windloads(s3_store.clone(), rbms_path).await?
+            gmt.windloads(store.clone(), rbms_path).await?
         }
     };
 

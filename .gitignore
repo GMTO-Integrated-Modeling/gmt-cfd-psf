@@ -6,3 +6,4 @@ frames/
 .aider.*
 !web/assets/*.png
 .setup
+.env*
