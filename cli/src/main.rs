@@ -206,13 +206,18 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    process_pb.finish_with_message("PSF processing complete");
     let frame_count = psfs.len();
 
     // Save all turbulence frames with consistent normalization
     if !args.no_shorts {
-        psfs.save_all_frames("frames")?;
+        process_pb.reset();
+        process_pb.set_message("Saving frames");
+        psfs.save_all_frames("frames", &process_pb)?;
+        process_pb.finish_with_message("All frames saved");
+    } else {
+        process_pb.finish_with_message("PSF processing complete");
     }
+
     psfs.sum().save("long_exposure_psf.png")?;
 
     println!();

@@ -20,7 +20,7 @@ use std::{
     sync::atomic::AtomicUsize,
 };
 
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::ProgressBar;
 
 use crate::{Config, DETECTOR_SIZE, psfs::psf::PSFError};
 
@@ -140,7 +140,11 @@ impl PSFs {
     /// # Returns
     ///
     /// Result indicating success or failure of the batch export operation
-    pub fn save_all_frames(&self, path: impl AsRef<Path>) -> Result<(), PSFsError> {
+    pub fn save_all_frames(
+        &self,
+        path: impl AsRef<Path>,
+        tracker: impl FrameTracker,
+    ) -> Result<(), PSFsError> {
         let frames: Vec<_> = self.psfs.iter().map(|psf| psf.frame.as_slice()).collect();
         let frames_global_minmax = find_global_extrema(frames.into_iter());
         let opds: Option<Vec<&[f32]>> = self
@@ -150,24 +154,13 @@ impl PSFs {
             .collect();
         let ops_global_minmax = opds.map(|opds| find_global_extrema(opds.into_iter()));
 
-        let n_frame = self.psfs.len();
-
-        // Create progress bar for saving frames
-        let save_pb = ProgressBar::new(n_frame as u64);
-        save_pb.set_style(
-        ProgressStyle::default_bar()
-            .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta}) {msg}")
-            .unwrap()
-            .progress_chars("#>-"),
-    );
-        save_pb.set_message("Saving frames");
-
         // Setup output directory
         let frames_dir = Path::new(path.as_ref());
         create_dir_all(frames_dir)
             .map_err(|e| PSFsError::CreateFrameDir(e, frames_dir.to_path_buf()))?;
 
         for (i, psf) in self.psfs.iter().enumerate() {
+            tracker.track(i);
             let filename = frames_dir.join(format!("frame_{:06}.png", i));
             psf.save_frame_as_png(filename, Some(frames_global_minmax))?;
             if let Err(e) = psf.save_opd_as_png(
@@ -176,34 +169,46 @@ impl PSFs {
             ) {
                 match e {
                     PSFError::OpdMissing => (),
-                    _ => return Err(e.into())
+                    _ => return Err(e.into()),
                 }
             }
-            save_pb.inc(1);
         }
 
-        save_pb.finish_with_message("All frames saved");
         Ok(())
     }
-    pub fn save_all_frames_with_atomic_index(
-        &self,
-        path: impl AsRef<Path>,
-        idx: &AtomicUsize,
-    ) -> Result<(), PSFsError> {
-        let frames: Vec<_> = self.psfs.iter().map(|psf| psf.frame.as_slice()).collect();
-        let global_minmax = find_global_extrema(frames.into_iter());
+    // pub fn save_all_frames_with_atomic_index(
+    //     &self,
+    //     path: impl AsRef<Path>,
+    //     idx: &AtomicUsize,
+    // ) -> Result<(), PSFsError> {
+    //     let frames: Vec<_> = self.psfs.iter().map(|psf| psf.frame.as_slice()).collect();
+    //     let global_minmax = find_global_extrema(frames.into_iter());
 
-        // Setup output directory
-        let frames_dir = Path::new(path.as_ref());
-        create_dir_all(frames_dir)
-            .map_err(|e| PSFsError::CreateFrameDir(e, frames_dir.to_path_buf()))?;
+    //     // Setup output directory
+    //     let frames_dir = Path::new(path.as_ref());
+    //     create_dir_all(frames_dir)
+    //         .map_err(|e| PSFsError::CreateFrameDir(e, frames_dir.to_path_buf()))?;
 
-        for (i, psf) in self.psfs.iter().enumerate() {
-            idx.store(i, std::sync::atomic::Ordering::Relaxed);
-            let filename = frames_dir.join(format!("frame_{:06}.png", i));
-            psf.save_frame_as_png(filename, Some(global_minmax))?;
-        }
+    //     for (i, psf) in self.psfs.iter().enumerate() {
+    //         idx.store(i, std::sync::atomic::Ordering::Relaxed);
+    //         let filename = frames_dir.join(format!("frame_{:06}.png", i));
+    //         psf.save_frame_as_png(filename, Some(global_minmax))?;
+    //     }
 
-        Ok(())
+    //     Ok(())
+    // }
+}
+
+pub trait FrameTracker {
+    fn track(&self, i: usize);
+}
+impl FrameTracker for &ProgressBar {
+    fn track(&self, _: usize) {
+        self.inc(1)
+    }
+}
+impl FrameTracker for &AtomicUsize {
+    fn track(&self, i: usize) {
+        self.store(i, std::sync::atomic::Ordering::Relaxed);
     }
 }
