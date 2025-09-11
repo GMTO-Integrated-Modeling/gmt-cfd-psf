@@ -233,7 +233,7 @@ impl Config {
         // Draw the segment ID #
         let r = 5.5 * image.width() as f32 / 25.5;
         for i in 0..6 {
-            let o = (i as f32 + 1.5) * std::f32::consts::FRAC_PI_3;
+            let o = (-i as f32 + 1.5) * std::f32::consts::FRAC_PI_3;
             let (mut y, mut x) = o.sin_cos();
             x *= r;
             x += 0.5 * image.width() as f32;

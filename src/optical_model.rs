@@ -100,6 +100,9 @@ impl GmtOpticalModel {
     pub fn set_config(&mut self, config: Rc<Config>) {
         self.config = config;
     }
+    pub fn gmt(&mut self) -> &mut Gmt {
+        &mut self.gmt
+    }
     pub fn domeseeing(mut self, cfd_path: impl AsRef<Path>) -> Result<Self> {
         self.domeseeing = Some(DomeSeeing::builder(cfd_path).build()?);
         Ok(self)

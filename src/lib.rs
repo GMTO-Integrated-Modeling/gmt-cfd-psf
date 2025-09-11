@@ -249,3 +249,27 @@ impl StorePath for object_store::path::Path {
         *self = Self::new(format!("{}.{}", self, ext));
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+
+    use skyangle::Conversion;
+
+    use crate::GmtOpticalModel;
+
+    #[test]
+    fn gmt_segment_identification() -> Result<(), Box<dyn Error>> {
+        let mut gmt = GmtOpticalModel::new()?;
+        gmt.gmt()
+            .m1_segment_state(1, vec![0.; 3].as_slice(), &[1f64.from_arcsec(), 0f64, 0f64]);
+        gmt.gmt().m1_segment_state(
+            2,
+            vec![0.; 3].as_slice(),
+            &[0f64, 1f64.from_arcsec(), 0f64, 0f64],
+        );
+        let psf = gmt.ray_trace().read_detector().opd(gmt.get_opd());
+        psf.save_opd_as_png("gmt_segment_identification.png", None)?;
+        Ok(())
+    }
+}
