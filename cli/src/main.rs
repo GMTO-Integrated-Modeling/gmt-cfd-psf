@@ -24,8 +24,6 @@ use psf::{
     AzimuthAngle, GmtOpticalModel, PSFs, StorePath, WindSpeed, ZenithAngle, get_enclosure_config,
 };
 
-const N_SAMPLE: usize = 100;
-
 #[derive(Debug, Clone, ValueEnum)]
 enum Exposure {
     Short,
@@ -59,6 +57,14 @@ struct Args {
     /// Writes the OPD map of the corresponding PSF to a png image
     #[arg(long)]
     opd: bool,
+
+    /// Sets the number of frames
+    #[arg(short, long, default_value_t = 100)]
+    n_frame: usize,
+
+    /// Do not save short exposure PSFs as images
+    #[arg(long)]
+    no_shorts: bool,
 }
 #[derive(Debug, Clone, ValueEnum)]
 enum WindLoadsOptions {
@@ -160,7 +166,7 @@ async fn main() -> anyhow::Result<()> {
     let mut psfs = PSFs::from(&gmt);
 
     // Create progress bar for frame processing
-    let process_pb = ProgressBar::new(N_SAMPLE as u64);
+    let process_pb = ProgressBar::new(args.n_frame as u64);
     process_pb.set_style(
         ProgressStyle::default_bar()
             .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta}) {msg}")
@@ -170,7 +176,7 @@ async fn main() -> anyhow::Result<()> {
     process_pb.set_message("Processing PSF frames");
 
     if args.opd {
-        for _ in 0..N_SAMPLE {
+        for _ in 0..args.n_frame {
             psfs.push(
                 gmt.ray_trace()
                     .read_detector()
@@ -180,7 +186,7 @@ async fn main() -> anyhow::Result<()> {
             process_pb.inc(1);
         }
     } else {
-        for _ in 0..N_SAMPLE {
+        for _ in 0..args.n_frame {
             psfs.push(
                 gmt.ray_trace()
                     .read_detector()
@@ -194,7 +200,9 @@ async fn main() -> anyhow::Result<()> {
     let frame_count = psfs.len();
 
     // Save all turbulence frames with consistent normalization
-    psfs.save_all_frames("frames")?;
+    if !args.no_shorts {
+        psfs.save_all_frames("frames")?;
+    }
     psfs.sum().save("long_exposure_psf.png")?;
 
     println!();
@@ -206,14 +214,13 @@ async fn main() -> anyhow::Result<()> {
     println!("🖼️  Reference PSF saved as psf.png");
     println!("🖼️  Long exposure PSF saved as long_exposure_psf.png");
     println!();
-    if args.opd{
-            println!("🎬 To create animated GIFs at 5Hz, run:");
-            println!("   convert -delay 20 -loop 0 frames/frame_*.png psf_animation.gif ; \\");
-            println!("   convert -delay 20 -loop 0 frames/opd_*.png opd_animation.gif");
-        }
-        else {
-            println!("🎬 To create an animated GIF at 5Hz, run:");
-            println!("   convert -delay 20 -loop 0 frames/frame_*.png psf_animation.gif");
+    if args.opd {
+        println!("🎬 To create animated GIFs at 5Hz, run:");
+        println!("   convert -delay 20 -loop 0 frames/frame_*.png psf_animation.gif ; \\");
+        println!("   convert -delay 20 -loop 0 frames/opd_*.png opd_animation.gif");
+    } else {
+        println!("🎬 To create an animated GIF at 5Hz, run:");
+        println!("   convert -delay 20 -loop 0 frames/frame_*.png psf_animation.gif");
     };
     Ok(())
 }
