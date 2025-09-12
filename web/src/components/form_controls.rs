@@ -108,18 +108,53 @@ pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
                             <span class="text-sm font-medium text-gray-700">"Dome Seeing"</span>
                         </label>
 
-                        <label class="flex items-center space-x-2">
-                            <input
-                                type="checkbox"
-                                checked=move || config.get().windloads
+                        <div class="flex items-center space-x-4">
+                            <label class="flex items-center space-x-2">
+                                <input
+                                    type="checkbox"
+                                    checked=move || config.get().windloads
+                                    on:change=move |ev| {
+                                        let checked = event_target_checked(&ev);
+                                        config.update(|c| c.windloads = checked);
+                                    }
+                                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <span class="text-sm font-medium text-gray-700">"Wind Loads"</span>
+                            </label>
+                            
+                            <select
+                                class="p-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
                                 on:change=move |ev| {
-                                    let checked = event_target_checked(&ev);
-                                    config.update(|c| c.windloads = checked);
+                                    let value = event_target_value(&ev);
+                                    let rbm_series = match value.as_str() {
+                                        "OpenLoop" => RbmTimeSeries::OpenLoop,
+                                        "Fsm" => RbmTimeSeries::Fsm,
+                                        "Asm" => RbmTimeSeries::Asm,
+                                        _ => RbmTimeSeries::OpenLoop,
+                                    };
+                                    config.update(|c| c.rbm_time_series = rbm_series);
                                 }
-                                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                            />
-                            <span class="text-sm font-medium text-gray-700">"Wind Loads"</span>
-                        </label>
+                            >
+                                <option 
+                                    value="OpenLoop" 
+                                    selected=move || matches!(config.get().rbm_time_series, RbmTimeSeries::OpenLoop)
+                                >
+                                    "open-loop"
+                                </option>
+                                <option 
+                                    value="Fsm" 
+                                    selected=move || matches!(config.get().rbm_time_series, RbmTimeSeries::Fsm)
+                                >
+                                    "closed-loop FSM"
+                                </option>
+                                <option 
+                                    value="Asm" 
+                                    selected=move || matches!(config.get().rbm_time_series, RbmTimeSeries::Asm)
+                                >
+                                    "closed-loop ASM"
+                                </option>
+                            </select>
+                        </div>
                     </div>
 
                     // YouTube videos section - side by side layout

@@ -85,8 +85,8 @@ pub async fn psf_generation(
     let mut gmt = if config.windloads {
         let rbms_path = Path::new(env::var("FEM")?)
             .join("cfd")
-            .join(cfd_case.to_string())
-            .join("m1_m2_rbms.parquet");
+            .join(cfd_case)
+            .join(config.rbm_time_series);
         leptos::logging::log!("{}", rbms_path);
         gmt.windloads(store.clone(), rbms_path).await?
     } else {
@@ -175,7 +175,7 @@ pub async fn opd_animation(output_dir: PathBuf) -> Result<GeneratedImage, Server
             output_dir.join("opd_animation.gif").to_str().unwrap()
         ),
 
-        description: "GMT CFD s animation".to_string(),
+        description: "GMT CFD OPDs animation".to_string(),
     })
 }
 
