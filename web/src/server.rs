@@ -99,7 +99,8 @@ pub async fn psf_generation(
     for i in 0..N_SAMPLE {
         FRAME_ID.store(i, Ordering::Relaxed);
         psfs.push(
-            gmt.ray_trace()
+            gmt.async_ray_trace()
+                .await
                 .read_detector()
                 .opd(gmt.get_opd())
                 .pssn_value(gmt.compute_pssn()),

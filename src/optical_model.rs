@@ -138,6 +138,28 @@ impl GmtOpticalModel {
         self.src.through(&mut self.imgr);
         self
     }
+    pub async fn async_ray_trace(&mut self) -> &mut Self {
+        // updating M1 & M2 rigid body motions
+        self.windloads.as_mut().map(|windloads| {
+            windloads.next().map(|rbms| {
+                let (m1_rbms, m2_rbms) = rbms.split_at(42);
+                self.gmt.update42(Some(m1_rbms), Some(m2_rbms), None, None);
+            })
+        });
+
+        self.src.through(&mut self.gmt).xpupil();
+
+        // adding dome seeing OPD map to the wavefront
+        if let Some(domeseeing) = self.domeseeing.as_mut() {
+            domeseeing
+                .async_next()
+                .await
+                .map(|opd| self.src.add(opd.as_slice()));
+        };
+
+        self.src.through(&mut self.imgr);
+        self
+    }
     pub fn compute_pssn(&mut self) -> f64 {
         self.src.through(&mut self.pssn);
         self.pssn.estimates()[0]

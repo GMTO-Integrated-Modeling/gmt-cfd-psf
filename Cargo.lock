@@ -2126,9 +2126,9 @@ dependencies = [
 
 [[package]]
 name = "gmt_dos-clients_domeseeing"
-version = "3.1.1"
+version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e511385404b8d0bae5a699f4c527a700e27316beee3813e622c51079f640cce1"
+checksum = "359a53edf564e04d0f0cb02e0f8a22f4adb1661f7bcb00aa55ffceee5dbec236"
 dependencies = [
  "futures",
  "glob",
