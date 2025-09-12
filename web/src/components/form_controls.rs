@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
 use leptos::prelude::Show;
 use leptos::prelude::*;
@@ -8,12 +8,33 @@ use serde::{Deserialize, Serialize};
 use crate::components::youtube_playlists;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum RbmTimeSeries {
+    OpenLoop,
+    Fsm,
+    Asm,
+}
+impl Display for RbmTimeSeries {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::OpenLoop => "m1_m2_rbms.parquet",
+                Self::Fsm => "m1_m2_rbms.FSM.parquet",
+                Self::Asm => "m1_m2_rbms.ASM.2.parquet",
+            }
+        )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PsfConfig {
     pub domeseeing: bool,
     pub windloads: bool,
     pub elevation_angle: ElevationAngle,
     pub azimuth_angle: AzimuthAngle,
     pub wind_speed: WindSpeed,
+    pub rbm_time_series: RbmTimeSeries,
 }
 
 impl Default for PsfConfig {
@@ -24,6 +45,7 @@ impl Default for PsfConfig {
             elevation_angle: ElevationAngle::Sixty,
             azimuth_angle: AzimuthAngle::Zero,
             wind_speed: WindSpeed::Seven,
+            rbm_time_series: RbmTimeSeries::OpenLoop
         }
     }
 }
@@ -48,7 +70,7 @@ pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
         let id = domeseeing_playlist.get().get(&title).unwrap().to_owned();
         (title, id)
     };
-    
+
     let windloads_playlist: HashMap<String, String> =
         serde_json::from_str(youtube_playlists::WINDLOADS).unwrap();
     let (windloads_playlist, ..) = signal(windloads_playlist);
@@ -128,7 +150,7 @@ pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
                                         }
                                     }}
                                 </Show>
-                                
+
                                 // Windloads video (right side)
                                 <Show when=move || config.get().windloads>
                                     {move || {
