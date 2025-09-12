@@ -174,7 +174,7 @@ pub async fn opd_animation(output_dir: PathBuf) -> Result<GeneratedImage, Server
             output_dir.join("opd_animation.gif").to_str().unwrap()
         ),
 
-        description: "GMT CFD OPDs animation".to_string(),
+        description: "GMT CFD s animation".to_string(),
     })
 }
 

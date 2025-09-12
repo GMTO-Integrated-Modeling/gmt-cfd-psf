@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::{
     components::form_controls::{ConfigForm, PsfConfig},
-    server::{get_frame_id, psf_animation, psf_generation},
+    server::{get_frame_id, opd_animation, psf_animation, psf_generation},
     N_SAMPLE,
 };
 
@@ -24,7 +24,8 @@ pub struct GenerationStatus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ProcessingStatus {
     Idle,
-    Processing,
+    Generating,
+    Animating,
     Complete,
     Error,
 }
@@ -67,7 +68,7 @@ pub fn PsfGenerator() -> impl IntoView {
         // First set a visible status to confirm button click worked
         generation_status.set(GenerationStatus {
             session_id: session_id.clone(),
-            status: ProcessingStatus::Processing,
+            status: ProcessingStatus::Generating,
             message: "PSF generation started".to_string(),
             progress: Some(0.0),
             images: Vec::new(),
@@ -83,7 +84,7 @@ pub fn PsfGenerator() -> impl IntoView {
                 let current_status = generation_status_clone.get_untracked();
 
                 // Only update progress if we're still processing
-                if matches!(current_status.status, ProcessingStatus::Processing) {
+                if matches!(current_status.status, ProcessingStatus::Generating) {
                     match get_frame_id().await {
                         Ok(frame_id) => {
                             // Calculate progress: frame_id ranges from 0 to 99, so progress is 0-100%
@@ -114,27 +115,48 @@ pub fn PsfGenerator() -> impl IntoView {
                 Ok(mut images) => {
                     generation_status.update(|status| {
                         status.images = images.clone();
+                        status.status = ProcessingStatus::Animating;
                         status.message = r#"frames generation complete,
 proceeding to creating short exposure PSFs animation"#
                             .to_string();
-                        status.progress = Some(100.0);
+                        status.progress = Some(0.0);
                     });
 
                     let output_dir = Path::new(&images[1].path).parent().unwrap().to_path_buf();
-                    match psf_animation(output_dir).await {
+                    match psf_animation(output_dir.clone()).await {
+                        Ok(image) => {
+                            images.push(image);
+                            generation_status.update(|status| {
+                                status.images = images.clone();
+                                // status.status = ProcessingStatus::Complete;
+                                status.message = r#"PSFs animation complete,
+proceeding to creating OPDs animation"#
+                                    .to_string();
+                                status.progress = Some(50.0);
+                            });
+                        }
+                        Err(e) => generation_status.set(GenerationStatus {
+                            session_id: session_id.clone(),
+                            status: ProcessingStatus::Error,
+                            message: format!("Error creating PSFs animation: {}", e),
+                            progress: None,
+                            images: Vec::new(),
+                        }),
+                    }
+                    match opd_animation(output_dir).await {
                         Ok(image) => {
                             images.push(image);
                             generation_status.update(|status| {
                                 status.images = images;
                                 status.status = ProcessingStatus::Complete;
-                                status.message = "Generation complete!".to_string();
+                                status.message = "Generation & animation complete!".to_string();
                                 status.progress = Some(100.0);
                             });
                         }
                         Err(e) => generation_status.set(GenerationStatus {
                             session_id,
                             status: ProcessingStatus::Error,
-                            message: format!("Error creating animation: {}", e),
+                            message: format!("Error creating OPDs animation: {}", e),
                             progress: None,
                             images: Vec::new(),
                         }),
@@ -177,7 +199,7 @@ fn StatusDisplay(generation_status: RwSignal<GenerationStatus>) -> impl IntoView
                             <span class="text-gray-600">"Ready to generate PSF frames"</span>
                         </div>
                     }.into_any(),
-                    ProcessingStatus::Processing => view! {
+                    ProcessingStatus::Generating | ProcessingStatus::Animating => view! {
                         <div class="space-y-3">
                             <div class="flex items-center space-x-2">
                                 <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
