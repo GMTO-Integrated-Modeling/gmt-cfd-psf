@@ -32,19 +32,38 @@ psfs.save_all_frames()?;
 ```
 */
 
-use std::fmt::Display;
-
 /// Default detector size in pixels (760x760)
 pub const DETECTOR_SIZE: usize = 760;
 
 cfg_if::cfg_if! {
     if #[cfg(feature="ssr")] {
+        use std::fmt::Display;
         mod config;
         mod optical_model;
         mod psfs;
         pub use config::Config;
         pub use optical_model::GmtOpticalModel;
         pub use psfs::{PSF, PSFs};
+
+        pub trait StorePath {
+            fn new(path: impl Into<Self>) -> Self
+            where
+                Self: Sized,
+            {
+                path.into()
+            }
+            fn join(&self, path: impl Display) -> Self;
+            fn set_extension(&mut self, ext: impl Display);
+        }
+
+        impl StorePath for object_store::path::Path {
+            fn join(&self, path: impl Display) -> Self {
+                Self::new(format!("{}/{}", self, path))
+            }
+            fn set_extension(&mut self, ext: impl Display) {
+                *self = Self::new(format!("{}.{}", self, ext));
+            }
+        }
     }
 }
 
@@ -227,26 +246,6 @@ pub fn get_enclosure_config(
         "cd" // closed dome for wind > 7 m/s and zenith < 60°
     } else {
         "cs" // closed sky for wind > 7 m/s and zenith >= 60°
-    }
-}
-
-pub trait StorePath {
-    fn new(path: impl Into<Self>) -> Self
-    where
-        Self: Sized,
-    {
-        path.into()
-    }
-    fn join(&self, path: impl Display) -> Self;
-    fn set_extension(&mut self, ext: impl Display);
-}
-
-impl StorePath for object_store::path::Path {
-    fn join(&self, path: impl Display) -> Self {
-        Self::new(format!("{}/{}", self, path))
-    }
-    fn set_extension(&mut self, ext: impl Display) {
-        *self = Self::new(format!("{}.{}", self, ext));
     }
 }
 

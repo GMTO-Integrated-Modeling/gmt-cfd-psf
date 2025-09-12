@@ -27,6 +27,8 @@ parse-monitors = { workspace = true, optional = true }
 psf = { version = "0.1.0", path = "..", package = "gmt-cfd-psf", features = [
   "serde",
 ] }
+object_store = { workspace = true, optional = true }
+dotenvy.workspace = true
 
 [features]
 csr = ["leptos/csr"]
@@ -41,10 +43,12 @@ ssr = [
   "dep:tokio",
   "dep:parse-monitors",
   "psf/ssr",
+  "dep:object_store"
   # "dep:psf",
 ]
 tokio = ["dep:tokio"]
 parse-monitors = ["dep:parse-monitors"]
+object_store = ["dep:object_store"]
 
 
 [package.metadata.leptos]

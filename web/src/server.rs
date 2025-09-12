@@ -13,14 +13,23 @@ pub async fn psf_generation(
     config: PsfConfig,
     session_id: String,
 ) -> Result<Vec<GeneratedImage>, ServerFnError> {
+    use crate::N_SAMPLE;
+    use object_store::{path::Path, ObjectStore};
     use parse_monitors::{
         cfd::{Baseline, BaselineTrait, CfdCase},
         CFD_YEAR,
     };
-    use psf::{get_enclosure_config, GmtOpticalModel, PSFs, ZenithAngle};
-    use std::{env, fs::create_dir_all, path::Path, sync::atomic::Ordering, time::Instant};
-    use crate::N_SAMPLE;
+    use psf::{get_enclosure_config, GmtOpticalModel, PSFs, StorePath, ZenithAngle};
+    use std::{
+        env,
+        fs::create_dir_all,
+        sync::{atomic::Ordering, Arc},
+        time::Instant,
+    };
 
+    let store: Arc<dyn ObjectStore> = Arc::new(
+        object_store::local::LocalFileSystem::new_with_prefix("/home/rconan/maua")?,
+    );
 
     let now = Instant::now();
 
@@ -65,19 +74,21 @@ pub async fn psf_generation(
 
     // Setup dome seeing if requested
     let gmt = if config.domeseeing {
-        let cfd_path = Baseline::<CFD_YEAR>::path()?.join(cfd_case.to_string());
-        gmt.domeseeing(cfd_path)?
+        let cfd_path =
+            Path::from(Baseline::<CFD_YEAR>::path()?.to_str().unwrap()).join(cfd_case.to_string());
+        gmt.domeseeing(store.clone(), cfd_path).await?
     } else {
         gmt
     };
 
     // Setup wind loads if requested
     let mut gmt = if config.windloads {
-        let rbms_path = Path::new(&env::var("FEM_REPO")?)
+        let rbms_path = Path::new(env::var("FEM")?)
             .join("cfd")
             .join(cfd_case.to_string())
             .join("m1_m2_rbms.parquet");
-        gmt.windloads(rbms_path)?
+        leptos::logging::log!("{}", rbms_path);
+        gmt.windloads(store.clone(), rbms_path).await?
     } else {
         gmt
     };
@@ -90,18 +101,15 @@ pub async fn psf_generation(
         psfs.push(
             gmt.ray_trace()
                 .read_detector()
+                .opd(gmt.get_opd())
                 .pssn_value(gmt.compute_pssn()),
         );
-
-        // Could emit progress updates here via websocket or polling endpoint
-        // let progress = ((i + 1) as f32 / N_SAMPLE as f32) * 100.0;
-        // println!("Progress: {:.1}%", progress);
     }
 
     // Setup output directory for frames
     let frames_dir = format!("{}/frames", output_dir);
     // Save all turbulence frames with consistent normalization
-    psfs.save_all_frames_with_atomic_index(frames_dir,&FRAME_ID)?;
+    psfs.save_all_frames(frames_dir, &*FRAME_ID)?;
 
     let long_exposure_path = format!("{}/long_exposure_psf.png", output_dir);
     psfs.sum().save(&long_exposure_path)?;
@@ -144,6 +152,29 @@ pub async fn psf_animation(output_dir: PathBuf) -> Result<GeneratedImage, Server
         ),
 
         description: "GMT short exposure CFD PSFs animation".to_string(),
+    })
+}
+#[server]
+pub async fn opd_animation(output_dir: PathBuf) -> Result<GeneratedImage, ServerFnError> {
+    use std::{path::Path, process::Command};
+    println!("   convert -delay 20 -loop 0 frames/opd_*.png opd_animation.gif");
+    let root = Path::new("target").join("site").join(&output_dir);
+    Command::new("/usr/bin/convert")
+        .arg("-delay")
+        .arg("20")
+        .arg("-loop")
+        .arg("0")
+        .arg(root.join("frames").join("opd_*.png"))
+        .arg(root.join("opd_animation.gif"))
+        .output()?;
+    Ok(GeneratedImage {
+        name: "Short exposure OPDs animation".to_string(),
+        path: format!(
+            "{:}",
+            output_dir.join("opd_animation.gif").to_str().unwrap()
+        ),
+
+        description: "GMT CFD OPDs animation".to_string(),
     })
 }
 

@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
-dotenvy = "0.15.7"
+dotenvy.workspace = true
 env_logger = "0.11.8"
 indicatif.workspace = true
 object_store.workspace = true
