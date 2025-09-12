@@ -80,7 +80,7 @@ pub fn PsfGenerator() -> impl IntoView {
             let mut interval = IntervalStream::new(1000); // 1 second intervals
 
             while let Some(_) = interval.next().await {
-                let current_status = generation_status_clone.get();
+                let current_status = generation_status_clone.get_untracked();
 
                 // Only update progress if we're still processing
                 if matches!(current_status.status, ProcessingStatus::Processing) {

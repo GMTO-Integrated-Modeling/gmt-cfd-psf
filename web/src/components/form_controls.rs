@@ -119,7 +119,7 @@ pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
                                                         src=format!("https://www.youtube.com/embed/{video_id}")
                                                         title=format!("CFD Data Visualization: {}", video_title)
                                                         style="border: 0;"
-                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                        allow=" clipboard-write; encrypted-media; picture-in-picture"
                                                         allowfullscreen=true
                                                     >
                                                     </iframe>
@@ -144,7 +144,7 @@ pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
                                                         src=format!("https://www.youtube.com/embed/{video_id}")
                                                         title=format!("CFD Data Visualization: {}", video_title)
                                                         style="border: 0;"
-                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                        allow=" clipboard-write; encrypted-media; picture-in-picture"
                                                         allowfullscreen=true
                                                     >
                                                     </iframe>
