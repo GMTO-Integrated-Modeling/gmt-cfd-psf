@@ -13,15 +13,24 @@ pub enum RbmTimeSeries {
     Fsm,
     Asm,
 }
+impl RbmTimeSeries {
+    pub fn file_name(&self) -> &str {
+        match self {
+            Self::OpenLoop => "m1_m2_rbms.parquet",
+            Self::Fsm => "m1_m2_rbms.FSM.parquet",
+            Self::Asm => "m1_m2_rbms.ASM.2.parquet",
+        }
+    }
+}
 impl Display for RbmTimeSeries {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                Self::OpenLoop => "m1_m2_rbms.parquet",
-                Self::Fsm => "m1_m2_rbms.FSM.parquet",
-                Self::Asm => "m1_m2_rbms.ASM.2.parquet",
+                Self::OpenLoop => "Wind Loads",
+                Self::Fsm => "(Wind Loads - FSM)",
+                Self::Asm => "(Wind Loads - ASM)",
             }
         )
     }
@@ -45,7 +54,7 @@ impl Default for PsfConfig {
             elevation_angle: ElevationAngle::Sixty,
             azimuth_angle: AzimuthAngle::Zero,
             wind_speed: WindSpeed::Seven,
-            rbm_time_series: RbmTimeSeries::OpenLoop
+            rbm_time_series: RbmTimeSeries::OpenLoop,
         }
     }
 }
@@ -121,7 +130,7 @@ pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
                                 />
                                 <span class="text-sm font-medium text-gray-700">"Wind Loads"</span>
                             </label>
-                            
+
                             <select
                                 class="p-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
                                 on:change=move |ev| {
@@ -135,20 +144,20 @@ pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
                                     config.update(|c| c.rbm_time_series = rbm_series);
                                 }
                             >
-                                <option 
-                                    value="OpenLoop" 
+                                <option
+                                    value="OpenLoop"
                                     selected=move || matches!(config.get().rbm_time_series, RbmTimeSeries::OpenLoop)
                                 >
                                     "open-loop"
                                 </option>
-                                <option 
-                                    value="Fsm" 
+                                <option
+                                    value="Fsm"
                                     selected=move || matches!(config.get().rbm_time_series, RbmTimeSeries::Fsm)
                                 >
                                     "closed-loop FSM"
                                 </option>
-                                <option 
-                                    value="Asm" 
+                                <option
+                                    value="Asm"
                                     selected=move || matches!(config.get().rbm_time_series, RbmTimeSeries::Asm)
                                 >
                                     "closed-loop ASM"

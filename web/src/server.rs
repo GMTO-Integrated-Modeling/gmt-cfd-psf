@@ -54,9 +54,9 @@ pub async fn psf_generation(
 
     // Generate turbulence effects string
     let turbulence_effects = match (config.domeseeing, config.windloads) {
-        (true, true) => Some("Dome Seeing + Wind Loads"),
-        (true, false) => Some("Dome Seeing"),
-        (false, true) => Some("Wind Loads"),
+        (true, true) => Some(format!("Dome Seeing + {}", config.rbm_time_series)),
+        (true, false) => Some("Dome Seeing".to_string()),
+        (false, true) => Some(config.rbm_time_series.to_string()),
         (false, false) => return Ok(vec![]),
     };
 
@@ -87,7 +87,7 @@ pub async fn psf_generation(
         let rbms_path = Path::new(env::var("FEM")?)
             .join("cfd")
             .join(cfd_case)
-            .join(config.rbm_time_series);
+            .join(config.rbm_time_series.file_name());
         leptos::logging::log!("{}", rbms_path);
         gmt.windloads(store.clone(), rbms_path).await?
     } else {
