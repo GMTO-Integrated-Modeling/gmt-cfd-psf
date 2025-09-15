@@ -103,6 +103,11 @@ pub fn CfdData(config: RwSignal<PsfConfig>) -> impl IntoView {
                     <legend class="text-lg font-medium text-gray-700 px-2">
                         "CFD Data"
                     </legend>
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-600 bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+                            "Select dome seeing and/or wind loads data; dome seeing data uses ray tracing through the volume of turbulence inside the dome; wind loads data applies wind pressure on the telescope mount and optics, the segment tip and tilt can  be filtered out either with the FSM or the ASM closed-loop rejection transfer functions (RTFs), the ASM also filters out the segment piston"
+                        </p>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                         <label class="flex items-center space-x-2">
                             <input
