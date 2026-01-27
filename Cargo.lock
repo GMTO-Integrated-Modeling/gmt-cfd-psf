@@ -4209,6 +4209,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "pssn-batch"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dotenvy",
+ "env_logger",
+ "gmt-cfd-psf",
+ "indicatif 0.18.0",
+ "object_store",
+ "parse-monitors",
+ "serde-pickle 1.2.0",
+ "tokio",
+]
+
+[[package]]
 name = "py_literal"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

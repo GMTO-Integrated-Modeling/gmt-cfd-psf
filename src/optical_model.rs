@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crseo::{
     Atmosphere, Builder, CrseoError, FromBuilder, Gmt, Imaging, PSSn, PSSnEstimates, Source,
@@ -32,9 +32,19 @@ pub struct GmtOpticalModel {
     pssn: PSSn<TelescopeError>,
     domeseeing: Option<DomeSeeing>,
     windloads: Option<WindLoads>,
-    config: Rc<Config>,
+    config: Arc<Config>,
+}
+#[cfg(feature = "verbose")]
+macro_rules! debug_println {
+    ($($arg:tt)*) => {
+        println!($($arg)*)
+    };
 }
 
+#[cfg(not(feature = "verbose"))]
+macro_rules! debug_println {
+    ($($arg:tt)*) => {{}};
+}
 impl GmtOpticalModel {
     pub fn new() -> Result<Self> {
         // Setup GMT optics and imaging
@@ -58,12 +68,13 @@ impl GmtOpticalModel {
             )
             .build()?;
 
+        #[cfg(feature = "verbose")]
         let gmt_diff_lim = (1.22 * src.wavelength() / 25.5).to_mas();
         let gmt_segment_diff_lim = (1.22 * src.wavelength() / 8.365).to_mas() as f32;
-        println!("GMT diffraction limited FWHM: {:.0}mas", gmt_diff_lim);
+        debug_println!("GMT diffraction limited FWHM: {:.0}mas", gmt_diff_lim);
         // pixel scale
         let px = imgr.pixel_scale(&src).to_mas();
-        println!(
+        debug_println!(
             "Detector: pixel scale: {:.0}mas, FOV: {:.2}arcsec",
             px,
             imgr.field_of_view(&src).to_mas()
@@ -71,14 +82,14 @@ impl GmtOpticalModel {
 
         let atm = Atmosphere::builder().build()?;
         let seeing = (0.98 * src.wavelength() / atm.r0()).to_mas() as f32;
-        println!("Atmosphere seeing: {:.0}mas", seeing);
+        debug_println!("Atmosphere seeing: {:.0}mas", seeing);
 
         // Calculate seeing radius in pixels (diameter = 2 * radius, so radius = seeing / 2 / px)
         let seeing_radius_pixels = (seeing / 2.0) / px;
         // Calculate GMT segment diff lim radius in pixels
         let segment_diff_lim_radius_pixels = (gmt_segment_diff_lim / 2.0) / px;
-        // println!("Seeing radius in pixels: {:.1}px", seeing_radius_pixels);
-        // println!("GMT segment diff lim radius in pixels: {:.1}px", segment_diff_lim_radius_pixels);
+        // debug_println!("Seeing radius in pixels: {:.1}px", seeing_radius_pixels);
+        // debug_println!("GMT segment diff lim radius in pixels: {:.1}px", segment_diff_lim_radius_pixels);
         let config = Config::new(
             seeing_radius_pixels,
             segment_diff_lim_radius_pixels,
@@ -94,10 +105,10 @@ impl GmtOpticalModel {
             config,
         })
     }
-    pub fn get_config(&self) -> Rc<Config> {
+    pub fn get_config(&self) -> Arc<Config> {
         self.config.clone()
     }
-    pub fn set_config(&mut self, config: Rc<Config>) {
+    pub fn set_config(&mut self, config: Arc<Config>) {
         self.config = config;
     }
     pub fn gmt(&mut self) -> &mut Gmt {
@@ -137,6 +148,37 @@ impl GmtOpticalModel {
 
         self.src.through(&mut self.imgr);
         self
+    }
+    pub fn ray_trace_all(&mut self) -> Option<&mut Self> {
+        // updating M1 & M2 rigid body motions
+        if let None = self
+            .windloads
+            .as_mut()
+            .map(|windloads| {
+                windloads.next().map(|rbms| {
+                    let (m1_rbms, m2_rbms) = rbms.split_at(42);
+                    self.gmt.update42(Some(m1_rbms), Some(m2_rbms), None, None);
+                })
+            })
+            .flatten()
+        {
+            return None;
+        };
+
+        self.src.through(&mut self.gmt).xpupil();
+
+        // adding dome seeing OPD map to the wavefront
+        if let None = self
+            .domeseeing
+            .as_mut()
+            .map(|domeseeing| domeseeing.next().map(|opd| self.src.add(opd.as_slice())))
+            .flatten()
+        {
+            return None;
+        };
+
+        self.src.through(&mut self.imgr);
+        Some(self)
     }
     pub async fn async_ray_trace(&mut self) -> &mut Self {
         // updating M1 & M2 rigid body motions

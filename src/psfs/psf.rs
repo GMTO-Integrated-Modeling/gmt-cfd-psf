@@ -16,7 +16,7 @@ frames with associated metadata and rendering capabilities.
 use std::{
     iter,
     path::{Path, PathBuf},
-    rc::Rc,
+    sync::Arc,
 };
 
 use image::{ImageBuffer, ImageError, Rgb};
@@ -66,7 +66,7 @@ pub struct PSF {
     pub(crate) pssn_value: Option<f64>,
     pub(crate) frame_number: Option<usize>,
     pub(crate) opd: Option<Vec<f32>>,
-    pub(crate) config: Rc<Config>,
+    pub(crate) config: Arc<Config>,
 }
 impl PSF {
     /// Create a new PSF frame with intensity data and shared configuration
@@ -79,7 +79,7 @@ impl PSF {
     /// # Returns
     ///
     /// PSF instance ready for metadata assignment and rendering
-    pub fn new(config: &Rc<Config>, frame: Vec<f32>) -> Self {
+    pub fn new(config: &Arc<Config>, frame: Vec<f32>) -> Self {
         Self {
             frame,
             config: config.clone(),

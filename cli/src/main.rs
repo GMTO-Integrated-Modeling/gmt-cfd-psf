@@ -123,7 +123,8 @@ async fn main() -> anyhow::Result<()> {
         (false, None) => return Err(anyhow!("you must select either domeseeing or windloads")),
     };
 
-    turbulence_effects.map(|value| gmt.set_config(gmt.get_config().turbulence_effects(value)));
+    turbulence_effects
+        .map(|value| gmt.set_config(gmt.get_config().turbulence_effects(value)));
 
     // CFD case - extract values from arguments
     let zenith = u32::from(args.zenith_angle);

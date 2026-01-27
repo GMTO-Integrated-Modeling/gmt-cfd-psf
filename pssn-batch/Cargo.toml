@@ -1,0 +1,18 @@
+[package]
+name = "pssn-batch"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow.workspace = true
+dotenvy.workspace = true
+env_logger = "0.11.8"
+indicatif.workspace = true
+object_store = { workspace = true, features = ["aws"] }
+parse-monitors.workspace = true
+psf = { version = "0.1.0", path = "..", package = "gmt-cfd-psf", features = [
+  "clap",
+  "ssr",
+] }
+serde-pickle = "1.2.0"
+tokio = { workspace = true, features = ["full"] }

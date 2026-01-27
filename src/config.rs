@@ -13,7 +13,7 @@ and metadata overlays for scientific visualization.
 - Builder pattern for flexible configuration
 */
 
-use std::{f32, rc::Rc};
+use std::{f32, sync::Arc};
 
 use ab_glyph::{FontRef, InvalidFont};
 use image::{Rgb, RgbImage};
@@ -29,7 +29,7 @@ pub enum ConfigError {
 
 /// Configuration for PSF rendering including visualization parameters and metadata
 ///
-/// This type uses interior mutability through [`Rc`] to enable shared configuration
+/// This type uses interior mutability through [`Arc`] to enable shared configuration
 /// across multiple PSF instances while supporting builder-pattern modifications.
 ///
 /// # Example
@@ -65,8 +65,8 @@ impl Config {
         seeing_radius_pixels: f32,
         segment_diff_lim_radius_pixels: f32,
         wavelength_nm: f64,
-    ) -> Rc<Self> {
-        Rc::new(Self {
+    ) -> Arc<Self> {
+        Arc::new(Self {
             seeing_radius_pixels,
             segment_diff_lim_radius_pixels,
             wavelength_nm,
@@ -83,7 +83,7 @@ impl Config {
     /// # Returns
     ///
     /// New configuration instance with CFD case metadata
-    pub fn cfd_case(self: Rc<Self>, value: impl ToString) -> Rc<Self> {
+    pub fn cfd_case(self: Arc<Self>, value: impl ToString) -> Arc<Self> {
         let &Self {
             seeing_radius_pixels,
             segment_diff_lim_radius_pixels,
@@ -91,7 +91,7 @@ impl Config {
             ref turbulence_effects,
             ..
         } = &*self;
-        Rc::new(Self {
+        Arc::new(Self {
             seeing_radius_pixels,
             segment_diff_lim_radius_pixels,
             wavelength_nm,
@@ -109,7 +109,7 @@ impl Config {
     /// # Returns
     ///
     /// New configuration instance with turbulence effects metadata
-    pub fn turbulence_effects(self: Rc<Self>, value: impl ToString) -> Rc<Self> {
+    pub fn turbulence_effects(self: Arc<Self>, value: impl ToString) -> Arc<Self> {
         let &Self {
             seeing_radius_pixels,
             segment_diff_lim_radius_pixels,
@@ -117,7 +117,7 @@ impl Config {
             ref cfd_case,
             ..
         } = &*self;
-        Rc::new(Self {
+        Arc::new(Self {
             seeing_radius_pixels,
             segment_diff_lim_radius_pixels,
             wavelength_nm,

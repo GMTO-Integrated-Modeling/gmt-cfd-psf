@@ -16,7 +16,7 @@ use std::{
     fs::create_dir_all,
     io,
     path::{Path, PathBuf},
-    rc::Rc,
+    sync::Arc,
     sync::atomic::AtomicUsize,
 };
 
@@ -61,7 +61,7 @@ pub enum PSFsError {
 #[derive(Debug, Default)]
 pub struct PSFs {
     psfs: Vec<PSF>,
-    config: Rc<Config>,
+    config: Arc<Config>,
 }
 
 /// Find global minimum and maximum values across all frames for consistent normalization
@@ -90,7 +90,7 @@ impl PSFs {
     /// # Returns
     ///
     /// Empty PSF collection ready for frame addition
-    pub fn new(config: &Rc<Config>) -> Self {
+    pub fn new(config: &Arc<Config>) -> Self {
         Self {
             config: config.clone(),
             ..Default::default()
