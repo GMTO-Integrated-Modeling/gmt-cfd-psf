@@ -3,6 +3,7 @@ frames/
 *.gif
 *.png
 *.json
+*.pkl
 .aider.*
 !web/assets/*.png
 .setup

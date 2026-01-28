@@ -45,6 +45,88 @@ macro_rules! debug_println {
 macro_rules! debug_println {
     ($($arg:tt)*) => {{}};
 }
+
+#[derive(Debug, Clone)]
+pub struct GmtOpticalModelBuilder {
+    photometry: String,
+}
+impl Default for GmtOpticalModelBuilder {
+    fn default() -> Self {
+        Self {
+            photometry: String::from("Vs"),
+        }
+    }
+}
+impl GmtOpticalModelBuilder {
+    pub fn v_band(self) -> Self {
+        Default::default()
+    }
+    pub fn h_band(self) -> Self {
+        Self {
+            photometry: String::from("H"),
+        }
+    }
+    pub fn build(self) -> Result<GmtOpticalModel> {
+        // Setup GMT optics and imaging
+        let gmt = Gmt::builder().build()?;
+        let src = Source::builder().band(self.photometry.as_str());
+        let pssn = PSSnBuilder::<TelescopeError>::default()
+            .source(src.clone())
+            .build()?;
+
+        let src = src.build()?;
+
+        // Get wavelength in nanometers for PSSN display
+        // let wavelength_nm = src.wavelength() * 1e9; // Convert meters to nanometers
+
+        let imgr = Imaging::builder()
+            .detector(
+                Detector::default()
+                    .n_px_imagelet(DETECTOR_SIZE)
+                    .n_px_framelet(DETECTOR_SIZE)
+                    .osf(4),
+            )
+            .build()?;
+
+        #[cfg(feature = "verbose")]
+        let gmt_diff_lim = (1.22 * src.wavelength() / 25.5).to_mas();
+        let gmt_segment_diff_lim = (1.22 * src.wavelength() / 8.365).to_mas() as f32;
+        debug_println!("GMT diffraction limited FWHM: {:.0}mas", gmt_diff_lim);
+        // pixel scale
+        let px = imgr.pixel_scale(&src).to_mas();
+        debug_println!(
+            "Detector: pixel scale: {:.0}mas, FOV: {:.2}arcsec",
+            px,
+            imgr.field_of_view(&src).to_mas()
+        );
+
+        let atm = Atmosphere::builder().build()?;
+        let seeing = (0.98 * src.wavelength() / atm.r0()).to_mas() as f32;
+        debug_println!("Atmosphere seeing: {:.0}mas", seeing);
+
+        // Calculate seeing radius in pixels (diameter = 2 * radius, so radius = seeing / 2 / px)
+        let seeing_radius_pixels = (seeing / 2.0) / px;
+        // Calculate GMT segment diff lim radius in pixels
+        let segment_diff_lim_radius_pixels = (gmt_segment_diff_lim / 2.0) / px;
+        // debug_println!("Seeing radius in pixels: {:.1}px", seeing_radius_pixels);
+        // debug_println!("GMT segment diff lim radius in pixels: {:.1}px", segment_diff_lim_radius_pixels);
+        let config = Config::new(
+            seeing_radius_pixels,
+            segment_diff_lim_radius_pixels,
+            src.wavelength() * 1e9,
+        );
+        Ok(GmtOpticalModel {
+            gmt,
+            src,
+            imgr,
+            pssn,
+            domeseeing: None,
+            windloads: None,
+            config,
+        })
+    }
+}
+
 impl GmtOpticalModel {
     pub fn new() -> Result<Self> {
         // Setup GMT optics and imaging
@@ -104,6 +186,9 @@ impl GmtOpticalModel {
             windloads: None,
             config,
         })
+    }
+    pub fn builder() -> GmtOpticalModelBuilder {
+        Default::default()
     }
     pub fn get_config(&self) -> Arc<Config> {
         self.config.clone()

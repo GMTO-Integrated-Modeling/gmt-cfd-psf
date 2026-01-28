@@ -48,7 +48,7 @@ async fn main() -> anyhow::Result<()> {
             h.push(tokio::spawn(async move {
                 // println!("{}", cfd_case);
                 // Setup GMT optics and imaging
-                let gmt = GmtOpticalModel::new()?;
+                let gmt = GmtOpticalModel::builder().h_band().build()?;
 
                 let gmt = {
                     let cfd_path =
@@ -80,7 +80,7 @@ async fn main() -> anyhow::Result<()> {
         }
     }
     serde_pickle::to_writer(
-        &mut File::create("cfd_domeseeing-windloads_v-pssn.pkl")?,
+        &mut File::create("cfd_domeseeing-windloads_h-pssn.pkl")?,
         &pssns,
         Default::default(),
     )?;
