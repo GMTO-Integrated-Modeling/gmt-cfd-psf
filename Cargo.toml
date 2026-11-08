@@ -23,7 +23,7 @@ cfg-if = "1.0.3"
 object_store = { workspace = true, optional = true }
 
 [workspace]
-members = ["cli", "web", "youtube-playlist-fetcher", "pssn-batch"]
+members = ["cli", "web", "youtube-playlist-fetcher", "pssn-batch", "piston-batch"]
 
 [workspace.dependencies]
 anyhow = "1.0.99"

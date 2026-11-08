@@ -1,0 +1,36 @@
+# AWS Batch job definition (Fargate), replace <ACCOUNT> with the AWS account ID:
+#   aws batch register-job-definition --cli-input-yaml file://piston-batch/job-definition.yaml
+jobDefinitionName: piston-batch
+type: container
+platformCapabilities:
+  - FARGATE
+timeout:
+  attemptDurationSeconds: 7200
+retryStrategy:
+  attempts: 2
+containerProperties:
+  image: <ACCOUNT>.dkr.ecr.us-east-1.amazonaws.com/piston-batch:latest
+  command: ["--concurrency", "8"]
+  jobRoleArn: arn:aws:iam::<ACCOUNT>:role/piston-batch-job
+  executionRoleArn: arn:aws:iam::<ACCOUNT>:role/ecsTaskExecutionRole
+  resourceRequirements:
+    - type: VCPU
+      value: "8"
+    - type: MEMORY
+      value: "16384"
+  environment:
+    - name: BUCKET
+      value: gmto.cfd.2025
+    - name: REGION
+      value: us-east-1
+    - name: FEM
+      value: FEM/20250506_1715_zen_30_M1_202110_FSM_202305_Mount_202305_pier_202411_M1_actDamping
+    - name: LOM_SENSITIVITIES
+      value: LOM/optical_sensitivities.rs.bin
+    - name: RUST_LOG
+      value: info
+  networkConfiguration:
+    assignPublicIp: ENABLED
+  runtimePlatform:
+    operatingSystemFamily: LINUX
+    cpuArchitecture: X86_64

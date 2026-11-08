@@ -1,0 +1,7 @@
+.git
+**/target
+**/.env*
+**/frames
+**/*.png
+**/*.gif
+**/*.pkl
