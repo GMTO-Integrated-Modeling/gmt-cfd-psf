@@ -6,12 +6,41 @@ edition = "2024"
 [dependencies]
 anyhow.workspace = true
 arrow = "55.2"
+bincode = "1.3"
 clap = { workspace = true, features = ["env"] }
 dotenvy.workspace = true
 env_logger = "0.11.8"
 futures = "0.3"
-gmt-lom = { version = "2.6.1", features = ["object_store"] }
+gmt-lom = { version = "2.6.3", features = ["object_store"] }
 log = "0.4"
-object_store = { workspace = true, features = ["aws"] }
+nalgebra = "0.34"
+object_store = { version = "0.13", features = ["aws"] }
 parquet = "55.2"
 tokio = { workspace = true, features = ["full"] }
+gmt-fem = { version = "5.2", optional = true }
+gmt_dos-actors = { version = "12.3", optional = true }
+gmt_dos-clients_arrow = { version = "2.3", optional = true }
+gmt_dos-clients_fem = { version = "5.4", optional = true }
+gmt_dos-clients_io = { version = "4.5", optional = true }
+gmt_dos-clients_servos = { version = "3.3.1", optional = true }
+gmt_dos-clients_windloads = { version = "3.1.1", features = ["cfd2025"], optional = true }
+# gmt_dos-actors 12.3 requires the interface 1.5.1 traits
+interface = { version = "1.5.1", package = "gmt_dos-actors-clients_interface", optional = true }
+
+[features]
+# wind loads simulation, requires FEM_REPO and MOUNT_MODEL at compile time
+windloads = [
+  "dep:gmt-fem",
+  "dep:gmt_dos-actors",
+  "dep:gmt_dos-clients_arrow",
+  "dep:gmt_dos-clients_fem",
+  "dep:gmt_dos-clients_io",
+  "dep:gmt_dos-clients_servos",
+  "dep:gmt_dos-clients_windloads",
+  "dep:interface",
+]
+cuda = ["windloads", "gmt_dos-clients_fem/cuda", "gmt_dos-clients_servos/cuda"]
+
+[[bin]]
+name = "windloads"
+required-features = ["windloads"]

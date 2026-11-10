@@ -8,3 +8,4 @@ frames/
 !web/assets/*.png
 .setup
 .env*
+.fem-io/

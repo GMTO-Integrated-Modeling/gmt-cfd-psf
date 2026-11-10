@@ -10,7 +10,7 @@ retryStrategy:
   attempts: 2
 containerProperties:
   image: <ACCOUNT>.dkr.ecr.us-east-1.amazonaws.com/piston-batch:latest
-  command: ["--concurrency", "8"]
+  command: ["--concurrency", "6"]
   jobRoleArn: arn:aws:iam::<ACCOUNT>:role/piston-batch-job
   executionRoleArn: arn:aws:iam::<ACCOUNT>:role/ecsTaskExecutionRole
   resourceRequirements:

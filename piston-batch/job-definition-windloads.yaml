@@ -1,0 +1,32 @@
+# AWS Batch job definition (EC2) of the wind loads simulation, replace <ACCOUNT> and <REGION>
+# (the compute region) or use deploy-windloads.sh:
+#   aws batch register-job-definition --cli-input-yaml file://piston-batch/job-definition-windloads.yaml
+# Submitted as an array job, one CFD case per child (--array-properties size=63),
+# the damping coefficient is set with --container-overrides '{"command":["--damping","0.005"]}'
+jobDefinitionName: windloads
+type: container
+platformCapabilities:
+  - EC2
+timeout:
+  attemptDurationSeconds: 43200
+retryStrategy:
+  attempts: 2
+containerProperties:
+  image: <ACCOUNT>.dkr.ecr.<REGION>.amazonaws.com/gmto.im/windloads:latest
+  command: []
+  jobRoleArn: arn:aws:iam::<ACCOUNT>:role/piston-batch-job
+  resourceRequirements:
+    - type: VCPU
+      value: "16"
+    - type: MEMORY
+      value: "30000"
+  environment:
+    # the bucket is in us-east-1, whatever the compute region
+    - name: BUCKET
+      value: gmto.cfd.2025
+    - name: REGION
+      value: us-east-1
+    - name: FEM
+      value: FEM/20250506_1715_zen_30_M1_202110_FSM_202305_Mount_202305_pier_202411_M1_actDamping
+    - name: RUST_LOG
+      value: info

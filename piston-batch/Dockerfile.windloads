@@ -1,0 +1,22 @@
+# Wind loads simulation container, built from the workspace root by deploy-windloads.sh:
+#   docker build -f piston-batch/Dockerfile.windloads -t windloads .
+# The FEM inputs and outputs are compiled in from `.fem-io/modal_state_space_model_2ndOrder.zip`,
+# a stub of the FEM zip file with only the inputs and outputs tables
+# (`rust/modal_state_space_model_2ndOrder_{in,out}.parquet`), the FEM itself is downloaded at runtime
+FROM rust:1.91-slim-bookworm AS builder
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential clang libclang-dev cmake pkg-config zlib1g-dev && \
+    rm -rf /var/lib/apt/lists/*
+WORKDIR /src
+COPY . .
+RUN FEM_REPO=/src/.fem-io MOUNT_MODEL=MOUNT_FDR_1kHz \
+    cargo build --release --locked -p piston-batch --features windloads --bin windloads && \
+    cp target/release/windloads /usr/local/bin/
+
+FROM debian:bookworm-slim
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+COPY --from=builder /usr/local/bin/windloads /usr/local/bin/windloads
+ENV RUST_LOG=info FEM_REPO=/tmp/fem CFD_REPO=/tmp/CASES
+ENTRYPOINT ["windloads"]
