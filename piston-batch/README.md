@@ -62,6 +62,7 @@ Outputs:
  - with `--save-rbms`, the corrected RBMs `<FEM>/cfd/<case>/m1_m2_rbms.fsm-rtf.parquet` and `m1_m2_rbms.asm-rtf.parquet`
 
 The first 5000 samples (wind loads ramp-up) are discarded (`--skip`).
+`--loop fsm` (or `--loop asm`) restricts the M2 loops, by default both FSM and ASM are computed.
 
 ### Local run
 

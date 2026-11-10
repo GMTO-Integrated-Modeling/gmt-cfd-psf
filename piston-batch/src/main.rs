@@ -50,8 +50,6 @@ use parquet::{
 };
 
 const N_SEGMENT: usize = 7;
-/// Time series suffixes: open loop, FSM and ASM
-const VARIANTS: [&str; 3] = ["", "_FSM", "_ASM"];
 
 #[derive(Parser)]
 #[command(name = "piston-batch")]
@@ -87,7 +85,16 @@ struct Args {
     #[arg(long)]
     local: Option<String>,
 
-    /// Also saves the RBMs corrected by the FSM and ASM loops
+    /// M2 loops applied to the open loop RBMs
+    #[arg(
+        long = "loop",
+        value_enum,
+        value_delimiter = ',',
+        default_value = "fsm,asm"
+    )]
+    loops: Vec<M2>,
+
+    /// Also saves the RBMs corrected by the M2 loops
     #[arg(long)]
     save_rbms: bool,
 }
@@ -164,6 +171,7 @@ async fn main() -> anyhow::Result<()> {
                 skip: args.skip,
                 sampling_frequency: args.sampling_frequency,
                 save_rbms: args.save_rbms,
+                loops: args.loops.clone(),
             };
             tokio::spawn(async move {
                 let stats =
@@ -181,12 +189,13 @@ async fn main() -> anyhow::Result<()> {
         let (case, stats) = result?;
         match stats {
             Ok(stats) => {
-                println!(
-                    "{case}: piston std [nm] open loop {:?}, FSM {:?}, ASM {:?}",
-                    nm(&stats.std[0]),
-                    nm(&stats.std[1]),
-                    nm(&stats.std[2])
-                );
+                let std: Vec<_> = ["open loop".to_string()]
+                    .into_iter()
+                    .chain(args.loops.iter().map(|m2| format!("{m2:?}")))
+                    .zip(&stats.std)
+                    .map(|(name, std)| format!("{name} {:?}", nm(std)))
+                    .collect();
+                println!("{case}: piston std [nm] {}", std.join(", "));
                 summary.push(stats);
             }
             Err(e) => {
@@ -200,7 +209,10 @@ async fn main() -> anyhow::Result<()> {
     if !summary.is_empty() {
         let path = fem.clone().join("segment_piston_summary.parquet");
         output
-            .put(&path, write_parquet(summary_record(&summary)?)?)
+            .put(
+                &path,
+                write_parquet(summary_record(&summary, &suffixes(&args.loops))?)?,
+            )
             .await?;
         println!("Saved summary of {} cases to {path}", summary.len());
     }
@@ -211,14 +223,15 @@ async fn main() -> anyhow::Result<()> {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct Options {
     skip: usize,
     sampling_frequency: f64,
     save_rbms: bool,
+    loops: Vec<M2>,
 }
 
-/// Computes and saves the segment piston, open loop and with the FSM and ASM loops,
+/// Computes and saves the segment piston, open loop and with the M2 loops,
 /// for a CFD case
 async fn process_case(
     store: Arc<dyn ObjectStore>,
@@ -232,6 +245,7 @@ async fn process_case(
         skip,
         sampling_frequency,
         save_rbms,
+        loops,
     } = options;
     let path = case_path.clone().join("m1_m2_rbms.parquet");
     log::info!("{case}: loading {path}");
@@ -263,7 +277,7 @@ async fn process_case(
     };
     let mut pistons = vec![trim(rejection.segment_piston(&rbm))];
     let mut rbms = vec![];
-    for m2 in [M2::FSM, M2::ASM] {
+    for &m2 in &loops {
         log::info!("{case}: {m2:?} loops");
         let mut rbm = rbm.clone();
         rejection.tiptilt_loop(&mut rbm, m2);
@@ -290,7 +304,13 @@ async fn process_case(
     output
         .put(
             &path,
-            write_parquet(piston_record(&time, &pistons, skip, sampling_frequency)?)?,
+            write_parquet(piston_record(
+                &time,
+                &pistons,
+                &suffixes(&loops),
+                skip,
+                sampling_frequency,
+            )?)?,
         )
         .await?;
     log::info!("{case}: saved {path}");
@@ -327,20 +347,28 @@ fn mean_std(piston: &[f64]) -> (Vec<f64>, Vec<f64>) {
         .unzip()
 }
 
+/// Time series suffixes: open loop and M2 loops
+fn suffixes(loops: &[M2]) -> Vec<&'static str> {
+    [""].into_iter()
+        .chain(loops.iter().map(M2::suffix))
+        .collect()
+}
+
 fn nm(values: &[f64]) -> Vec<f64> {
     values.iter().map(|x| (x * 1e10).round() / 10.).collect()
 }
 
-/// Segment piston time series record: `time`, `S1`..`S7`, `S1_FSM`..`S7_FSM`, `S1_ASM`..`S7_ASM`
+/// Segment piston time series record: `time`, `S1`..`S7` and `S1_<M2>`..`S7_<M2>` for each M2 loop
 fn piston_record(
     time: &[f64],
     pistons: &[Vec<f64>],
+    suffixes: &[&str],
     skip: usize,
     sampling_frequency: f64,
 ) -> anyhow::Result<RecordBatch> {
     let mut fields = vec![Field::new("time", DataType::Float64, false)];
     let mut columns: Vec<ArrayRef> = vec![Arc::new(Float64Array::from(time.to_vec()))];
-    for (piston, suffix) in pistons.iter().zip(VARIANTS) {
+    for (piston, suffix) in pistons.iter().zip(suffixes) {
         for i in 0..N_SEGMENT {
             fields.push(Field::new(
                 format!("S{}{suffix}", i + 1),
@@ -366,8 +394,8 @@ fn piston_record(
     )?)
 }
 
-/// Summary record: `case`, `segment`, `mean`, `std`, `mean_FSM`, `std_FSM`, `mean_ASM`, `std_ASM`
-fn summary_record(summary: &[Stats]) -> anyhow::Result<RecordBatch> {
+/// Summary record: `case`, `segment`, `mean`, `std` and `mean_<M2>`, `std_<M2>` for each M2 loop
+fn summary_record(summary: &[Stats], suffixes: &[&str]) -> anyhow::Result<RecordBatch> {
     let case = StringArray::from(
         summary
             .iter()
@@ -380,7 +408,7 @@ fn summary_record(summary: &[Stats]) -> anyhow::Result<RecordBatch> {
         Field::new("segment", DataType::UInt8, false),
     ];
     let mut columns: Vec<ArrayRef> = vec![Arc::new(case), Arc::new(segment)];
-    for (k, suffix) in VARIANTS.iter().enumerate() {
+    for (k, suffix) in suffixes.iter().enumerate() {
         let stats: [(&str, fn(&Stats) -> &Vec<Vec<f64>>); 2] =
             [("mean", |s| &s.mean), ("std", |s| &s.std)];
         for (name, stat) in stats {

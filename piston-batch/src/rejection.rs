@@ -19,10 +19,19 @@ use nalgebra as na;
 const N_SEGMENT: usize = 7;
 
 /// M2 type
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, clap::ValueEnum)]
 pub enum M2 {
     FSM,
     ASM,
+}
+impl M2 {
+    /// Suffix of the time series and statistics columns
+    pub fn suffix(&self) -> &'static str {
+        match self {
+            M2::FSM => "_FSM",
+            M2::ASM => "_ASM",
+        }
+    }
 }
 
 trait Control {
