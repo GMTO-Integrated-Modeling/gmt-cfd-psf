@@ -1,24 +1,27 @@
-# AWS Batch job definition (Fargate), replace <ACCOUNT> with the AWS account ID:
+# AWS Batch job definition (EC2) of the segment piston, replace <ACCOUNT> and <REGION>
+# (the compute region) or use deploy-piston-batch.sh:
 #   aws batch register-job-definition --cli-input-yaml file://piston-batch/job-definition.yaml
+# A single job processes all the CFD cases of a trade study,
+# the study is set with --container-overrides '{"environment":[{"name":"FEM","value":"FEM/<FEM>/<STUDY>"}]}'
 jobDefinitionName: piston-batch
 type: container
 platformCapabilities:
-  - FARGATE
+  - EC2
 timeout:
   attemptDurationSeconds: 7200
 retryStrategy:
   attempts: 2
 containerProperties:
-  image: <ACCOUNT>.dkr.ecr.us-east-1.amazonaws.com/piston-batch:latest
-  command: ["--concurrency", "6"]
+  image: <ACCOUNT>.dkr.ecr.<REGION>.amazonaws.com/gmto.im/piston-batch:latest
+  command: ["--concurrency", "6", "--loop", "fsm"]
   jobRoleArn: arn:aws:iam::<ACCOUNT>:role/piston-batch-job
-  executionRoleArn: arn:aws:iam::<ACCOUNT>:role/ecsTaskExecutionRole
   resourceRequirements:
     - type: VCPU
       value: "8"
     - type: MEMORY
-      value: "16384"
+      value: "16000"
   environment:
+    # the bucket is in us-east-1, whatever the compute region
     - name: BUCKET
       value: gmto.cfd.2025
     - name: REGION
@@ -29,8 +32,3 @@ containerProperties:
       value: LOM/optical_sensitivities.rs.bin
     - name: RUST_LOG
       value: info
-  networkConfiguration:
-    assignPublicIp: ENABLED
-  runtimePlatform:
-    operatingSystemFamily: LINUX
-    cpuArchitecture: X86_64

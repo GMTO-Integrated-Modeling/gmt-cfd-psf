@@ -1,13 +1,12 @@
-# syntax=docker/dockerfile:1
-# Build from the workspace root:
+# Segment piston container, built from the workspace root by deploy-piston-batch.sh:
 #   docker build -f piston-batch/Dockerfile -t piston-batch .
 FROM rust:1.91-slim-bookworm AS builder
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential pkg-config && \
+    rm -rf /var/lib/apt/lists/*
 WORKDIR /src
 COPY . .
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/cargo/git \
-    --mount=type=cache,target=/src/target \
-    cargo build --release --locked -p piston-batch && \
+RUN cargo build --release --locked -p piston-batch --bin piston-batch && \
     cp target/release/piston-batch /usr/local/bin/
 
 FROM debian:bookworm-slim

@@ -84,6 +84,11 @@ builds and pushes the image, registers the job definition and submits the job:
 FEM_DIR=<path/to/FEM> DOCKER="sudo docker" piston-batch/deploy-windloads.sh --case zen30az000_OS_7ms
 FEM_DIR=<path/to/FEM> SKIP_BUILD=1 ARRAY=63 piston-batch/deploy-windloads.sh --damping 0.005
 ```
+and the segment piston on the same queue with [deploy-piston-batch.sh](deploy-piston-batch.sh),
+waiting for the wind loads array job of the trade study:
+```shell
+FEM=FEM/<FEM>/zeta_0.5pc DEPENDS_ON=<jobId> DOCKER="sudo docker" piston-batch/deploy-piston-batch.sh
+```
 
 The steps below detail the manual deployment.
 
@@ -93,10 +98,10 @@ The steps below detail the manual deployment.
    ```
 2. Build the containers from the workspace root and push them to ECR:
    ```shell
-   aws ecr create-repository --repository-name piston-batch --region us-east-1
-   aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <ACCOUNT>.dkr.ecr.us-east-1.amazonaws.com
-   docker build -f piston-batch/Dockerfile -t <ACCOUNT>.dkr.ecr.us-east-1.amazonaws.com/piston-batch:latest .
-   docker push <ACCOUNT>.dkr.ecr.us-east-1.amazonaws.com/piston-batch:latest
+   aws ecr create-repository --repository-name gmto.im/piston-batch --region us-west-2
+   aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin <ACCOUNT>.dkr.ecr.us-west-2.amazonaws.com
+   docker build -f piston-batch/Dockerfile -t <ACCOUNT>.dkr.ecr.us-west-2.amazonaws.com/gmto.im/piston-batch:latest .
+   docker push <ACCOUNT>.dkr.ecr.us-west-2.amazonaws.com/gmto.im/piston-batch:latest
    ```
    and for the wind loads simulation (it compiles the FEM inputs and outputs in the image):
    ```shell
@@ -119,15 +124,15 @@ The steps below detail the manual deployment.
    }
    ```
    The last statement lets `windloads` write only in a trade study sub-directory, never over the baseline RBMs.
-4. Register the job definitions and submit the jobs:
+4. Register the job definitions (after replacing `<ACCOUNT>` and `<REGION>`) and submit the jobs:
    ```shell
-   aws batch register-job-definition --cli-input-yaml file://piston-batch/job-definition.yaml
-   aws batch register-job-definition --cli-input-yaml file://piston-batch/job-definition-windloads.yaml
+   aws batch register-job-definition --region us-west-2 --cli-input-yaml file://piston-batch/job-definition.yaml
+   aws batch register-job-definition --region us-west-2 --cli-input-yaml file://piston-batch/job-definition-windloads.yaml
    # 63 CFD cases, one per array child
-   aws batch submit-job --job-name windloads-zeta-0.5pc --job-queue <EC2_QUEUE> --job-definition windloads \
+   aws batch submit-job --job-name windloads-zeta-0.5pc --job-queue WindCFDJobs --job-definition windloads \
      --array-properties size=63 --container-overrides '{"command":["--damping","0.005"]}'
-   # then, once completed
-   aws batch submit-job --job-name piston-batch --job-queue <FARGATE_QUEUE> --job-definition piston-batch \
+   # then, once completed (or with --depends-on jobId=<windloads jobId>)
+   aws batch submit-job --job-name piston-batch --job-queue WindCFDJobs --job-definition piston-batch \
      --container-overrides '{"environment":[{"name":"FEM","value":"FEM/<FEM>/zeta_0.5pc"}]}'
    ```
    A subset of cases is processed by overriding the command, e.g.
