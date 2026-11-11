@@ -21,10 +21,11 @@ from scipy.signal import csd, periodogram, welch
 DATA, FEM = Path(sys.argv[1]), Path(sys.argv[2])
 OUT = Path(__file__).parent / "figures"
 FS, FMAX = 1000.0, 153.0
-INK, MUTED, GRID = "#23373B", "#5B6475", "#E4E2DA"
-BLUE, ORANGE, PURPLE, GREEN, GRAY = "#2A78D6", "#E2622A", "#7353BA", "#2E9E6B", "#4A4A4A"
+# GMT palette (beamerthemeGMT.sty)
+INK, MUTED, GRID = "#28282D", "#66717E", "#E8E7ED"
+BLUE, ORANGE, PURPLE, GREEN, GRAY = "#004181", "#F3761D", "#4491CC", "#533768", "#66717E"
 plt.rcParams.update({
-    "font.family": ["Fira Sans", "DejaVu Sans"], "font.size": 11, "axes.edgecolor": MUTED,
+    "font.family": ["Liberation Sans", "Arial", "Helvetica", "DejaVu Sans"], "font.size": 11, "axes.edgecolor": MUTED,
     "axes.labelcolor": INK, "text.color": INK, "xtick.color": MUTED, "ytick.color": MUTED,
     "axes.grid": True, "grid.color": GRID, "grid.linewidth": 0.6, "axes.spines.top": False,
     "axes.spines.right": False, "legend.frameon": False, "savefig.bbox": "tight",

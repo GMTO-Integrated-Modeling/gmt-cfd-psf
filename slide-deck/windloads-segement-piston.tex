@@ -1,23 +1,21 @@
 % Wind-load induced segment piston of the GMT, for an adaptive optics audience
-% Build with: latexmk -xelatex windloads-segement-piston.tex
+% Build with: latexmk -pdf windloads-segement-piston.tex (GMT theme: beamerthemeGMT.sty and its 2 background images)
 % Figures: python3 make_figures.py <data> <fem> (see make_figures.py)
 \documentclass[10pt,aspectratio=169]{beamer}
-\usetheme[progressbar=frametitle,numbering=fraction,sectionpage=none]{metropolis}
+\usetheme{GMT}
 \usepackage{booktabs}
 \usepackage{siunitx}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,calc}
 \sisetup{group-separator={,},group-minimum-digits=4}
 
-\definecolor{ink}{HTML}{23373B}
-\definecolor{accent}{HTML}{2A78D6}
-\definecolor{warm}{HTML}{E2622A}
+% diagram colours from the GMT palette
+\colorlet{ink}{GMTnavy}
+\colorlet{accent}{GMTlightblue}
+\colorlet{warm}{GMTorange}
 \definecolor{soft}{HTML}{EEF1F5}
-\definecolor{softblue}{HTML}{DCE9FA}
-\definecolor{softwarm}{HTML}{FCE5D9}
-\setbeamercolor{alerted text}{fg=warm}
-\setbeamercolor{frametitle}{bg=ink}
-\setbeamercolor{progress bar}{fg=accent,bg=soft}
+\colorlet{softblue}{GMTlightblue!20}
+\colorlet{softwarm}{GMTorange!15}
 
 \tikzset{
   box/.style={draw=none,fill=#1,rounded corners=3pt,align=center,inner sep=5pt,font=\small,minimum height=1.1cm},
@@ -25,15 +23,15 @@
   flow/.style={-{Stealth[length=2.2mm]},thick,draw=ink!70},
 }
 
-\title{Wind-load induced segment piston of the GMT}
-\subtitle{From CFD wind loads to segment piston, through the integrated model}
+\title[Wind-load segment piston]{Wind-load segment\\piston of the GMT}
+\subtitle{CFD loads to segment piston}
 \author{R.\,Conan}
-\institute{GMTO integrated modeling}
+\institute{Integrated Modeling, Giant Magellan Telescope}
 \date{November 2026}
 
 \begin{document}
 
-\maketitle
+\titleframe
 
 %------------------------------------------------------------------------------
 \begin{frame}{Why segment piston from the wind matters}
@@ -66,18 +64,18 @@
 
 \begin{frame}{The integrated model at a glance}
   \centering
-  \resizebox{0.97\linewidth}{!}{%
+  \resizebox{0.78\linewidth}{!}{%
   \begin{tikzpicture}[node distance=7mm and 6mm]
     \node[box=softwarm,text width=2.4cm] (cfd) {\textbf{CFD wind loads}\\forces \& moments\\\SI{20}{Hz}, 78 points};
     \node[box=softblue,text width=3.2cm,right=of cfd] (fem) {\textbf{Structure (FEM)}\\modal model\\\num{23518} modes, $\zeta$};
-    \node[box,text width=2.8cm,above=5mm of fem] (ctrl) {\textbf{Servo-mechanisms}\\mount, M1, M2\\positioners};
+    \node[box,text width=2.8cm,above=9mm of fem] (ctrl) {\textbf{Servo-mechanisms}\\mount, M1, M2\\positioners};
     \node[box=ink,text=white,text width=2.2cm,right=of fem] (rbm) {\textbf{M1 \& M2 RBMs}\\$14\times6$ dof\\\SI{1}{kHz}};
     \node[box=softblue,text width=2.4cm,right=of rbm] (lom) {\textbf{Optics (LOM)}\\linear optical\\sensitivities};
     \node[box=softwarm,text width=2.2cm,right=of lom] (out) {\textbf{Segment piston}\\S1--S7};
     \node[box,text width=2.4cm,below=7mm of lom] (fsm) {\textbf{FSM tip-tilt loop}\\M2 Rx, Ry};
     \draw[flow] (cfd) -- (fem);
-    \draw[flow] (fem.north west) ++(4mm,0) |- (ctrl.west);
-    \draw[flow] (ctrl.east) -| ($(fem.north east)+(-4mm,0)$);
+    \draw[flow] ($(fem.north)+(-6mm,0)$) -- ($(ctrl.south)+(-6mm,0)$) node[midway,left,font=\scriptsize,text=ink!70] {sensors};
+    \draw[flow] ($(ctrl.south)+(6mm,0)$) -- ($(fem.north)+(6mm,0)$) node[midway,right,font=\scriptsize,text=ink!70] {actuators};
     \draw[flow] (fem) -- (rbm);
     \draw[flow] (rbm) -- (lom);
     \draw[flow] (lom) -- (out);
@@ -88,9 +86,9 @@
     \node[draw=warm,dashed,rounded corners,fit=(lom)(out)(fsm),inner sep=3mm,
       label={[warm,font=\footnotesize]above:stage 2 \texttt{piston-batch} (seconds per case)}] {};
   \end{tikzpicture}}
-  \vspace{3mm}
+  \vspace{1mm}
 
-  {\small The time domain simulation runs at \SI{1}{kHz}: the CFD loads drive the structure, which is held in place by its own control loops; the optics are a linear function of the rigid body motions (RBMs).}
+  {\footnotesize \SI{1}{kHz} time domain simulation: the CFD loads drive the structure, held in place by its own control loops; the optics are linear in the rigid body motions (RBMs).}
 \end{frame}
 
 %------------------------------------------------------------------------------
@@ -130,7 +128,7 @@
       \begin{itemize}
         \item Telescope FEM (mount, pier, M1 cells with fans, FSM top end) reduced to a \alert{modal model}:\\
           $\ddot{q} + 2\zeta\omega\dot{q} + \omega^2 q = B\,u$, \quad $y = C\,q$
-        \item \textbf{M1 fans FEM} (20251110\_1617): \num{23518} modes from \SI{0.07}{Hz} to \SI{153}{Hz}
+        \item \textbf{FEM} (20251110\_1617): \num{23518} modes from \SI{0.07}{Hz} to \SI{153}{Hz}
         \item Same proportional damping $\zeta$ for all modes: \alert{\SI{2}{\%}} by default, \SI{0.5}{\%} stored in the FEM
         \item Discretized at \SI{1}{kHz}, static gain compensated for the truncated modes
       \end{itemize}
@@ -138,7 +136,7 @@
     \begin{column}{0.5\textwidth}
       \includegraphics[width=\linewidth]{figures/fem_modes.pdf}
 
-      {\footnotesize Natural frequencies of the M1 fans FEM: 169 modes below \SI{10}{Hz}.}
+      {\footnotesize Natural frequencies of the FEM: 169 modes below \SI{10}{Hz}.}
     \end{column}
   \end{columns}
 \end{frame}
@@ -149,17 +147,17 @@
   \vspace{2mm}
   \begin{columns}[T]
     \begin{column}{0.32\textwidth}
-      \begin{block}{Mount}
+      \begin{block}{Mount}\raggedright
         Azimuth, elevation and GIR drives and encoders (\SI{1}{kHz} controller): reject the wind torque on the mount
       \end{block}
     \end{column}
     \begin{column}{0.32\textwidth}
-      \begin{block}{M1}
+      \begin{block}{M1}\raggedright
         6 hardpoints and up to 335 force actuators per segment; the actuators off-load the hardpoint forces (loop sampled at \SI{12.5}{Hz})
       \end{block}
     \end{column}
     \begin{column}{0.32\textwidth}
-      \begin{block}{M2}
+      \begin{block}{M2}\raggedright
         Segment positioners (hexapods) and FSM piezo-stack actuators
       \end{block}
     \end{column}
@@ -197,6 +195,7 @@
 
 %------------------------------------------------------------------------------
 \begin{frame}{The FSM tip-tilt loop}
+  \setbeamerfont{itemize/enumerate body}{size=\fontsize{9}{11}\selectfont}
   \begin{columns}[c]
     \begin{column}{0.45\textwidth}
       \begin{itemize}
@@ -207,7 +206,7 @@
         \item Correction applied to M2 Rx \& Ry through the inverse of the M2 tilt sensitivity
       \end{itemize}
       \vspace{1mm}
-      {\small The FSM does not sense piston: it changes piston only by moving the M2 segments.}
+      {\footnotesize The FSM does not sense piston: it changes piston only by moving the M2 segments.}
     \end{column}
     \begin{column}{0.53\textwidth}
       \includegraphics[width=\linewidth]{figures/fsm_rtf.pdf}
@@ -259,7 +258,7 @@
 %------------------------------------------------------------------------------
 \section{Sensitivity to the damping}
 
-\begin{frame}{M1 fans FEM: \SI{2}{\%} against \SI{1}{\%} damping}
+\begin{frame}{FEM: \SI{2}{\%} against \SI{1}{\%} damping}
   \begin{columns}[c]
     \begin{column}{0.6\textwidth}
       \small
@@ -298,15 +297,15 @@
 %------------------------------------------------------------------------------
 \begin{frame}{Damping: the resonances grow above \SI{3}{Hz}}
   \centering
-  \includegraphics[width=0.92\linewidth]{figures/damping_psd.pdf}
+  \includegraphics[width=0.76\linewidth]{figures/damping_psd.pdf}
 
-  {\small Open-loop segment piston PSDs, M1 fans FEM, zen30az000\_OS\_7ms, \SIrange{0.06}{153}{Hz}}
+  {\small Open-loop segment piston PSDs, FEM, zen30az000\_OS\_7ms, \SIrange{0.06}{153}{Hz}}
 \end{frame}
 
 %------------------------------------------------------------------------------
 \begin{frame}{Damping: the curves separate above \SI{3}{Hz}}
   \centering
-  \includegraphics[width=0.86\linewidth]{figures/damping_cumstd.pdf}
+  \includegraphics[width=0.74\linewidth]{figures/damping_cumstd.pdf}
 
   {\small $\sigma(f)=\sqrt{\int_0^f \mathrm{PSD}}$ (zoomed y axes) overlap up to \SI{\sim 3}{Hz}; above, each mode adds a larger step at \SI{1}{\%}. The curves end at the total std of the table: $+$\SIrange{1}{2}{nm} on S1--S6, $+$\SI{3}{nm} on S7}
 \end{frame}
@@ -314,7 +313,7 @@
 %------------------------------------------------------------------------------
 \section{Segment piston over the 63 CFD cases}
 
-\begin{frame}{63 cases, M1 fans FEM, \SI{1}{\%} damping}
+\begin{frame}{63 cases, FEM at \SI{1}{\%} damping}
   \centering
   \includegraphics[width=\linewidth]{figures/cases_heatmap.pdf}
 
@@ -324,7 +323,7 @@
 %------------------------------------------------------------------------------
 \begin{frame}{Piston grows with wind speed, most at zenith \ang{60}}
   \centering
-  \includegraphics[width=0.86\linewidth]{figures/std_vs_wind.pdf}
+  \includegraphics[width=0.8\linewidth]{figures/std_vs_wind.pdf}
 
   {\small Mean over the 5 azimuths (and S1--S6, left), bars: min to max. Dashed: $a v^2$ fitted to the open vents cases at 2 and \SI{7}{m/s}, within \SI{12}{\%} of them. With the wind screen deployed (CD) the piston is 3 to 6 times below the extrapolated $a v^2$; at zenith \ang{60}, screen stowed (CS), it follows $a v^2$ within \SI{30}{\%}.}
 \end{frame}
@@ -359,7 +358,7 @@
 %------------------------------------------------------------------------------
 \begin{frame}{Temporal spectrum: the piston is slow}
   \centering
-  \includegraphics[width=0.88\linewidth]{figures/cases_psd.pdf}
+  \includegraphics[width=0.82\linewidth]{figures/cases_psd.pdf}
 
   {\small S1 open-loop piston at azimuth \ang{0}: 81 to 99.6\,\% of the std is below \SI{1}{Hz} and more than 99.5\,\% below \SI{3}{Hz}, for all wind speeds. Above \SI{3}{Hz} the spectrum is set by the structural modes (\SIrange{4}{25}{Hz}).}
 \end{frame}
@@ -391,7 +390,7 @@
           \item Reproducible trade studies on AWS Batch
         \end{itemize}
       \end{block}
-      \begin{block}{Damping (M1 fans FEM)}
+      \begin{block}{Damping (FEM)}
         \begin{itemize}
           \item $\zeta$: \SI{2}{\%} $\rightarrow$ \SI{1}{\%}: total piston $+0.2$ to $+1.1\,\%$, resonant band ($>$\SI{3}{Hz}) $+11$ to $+26\,\%$
         \end{itemize}
@@ -406,7 +405,7 @@
           \item The FSM leaves the piston unchanged ($+0.4\,\%$)
         \end{itemize}
       \end{block}
-      {\small Damping sensitivity from one CFD case only; the 63 cases at \SI{2}{\%} would complete the trade.}
+      {\footnotesize Damping sensitivity from one CFD case only.}
     \end{column}
   \end{columns}
 \end{frame}

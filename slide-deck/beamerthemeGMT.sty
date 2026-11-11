@@ -1,0 +1,428 @@
+%% beamerthemeGMT.sty
+%% LaTeX Beamer theme matching the Giant Magellan Telescope (GMT)
+%% PowerPoint template GMT-TMP-00316.
+%%
+%% Usage:
+%%   \documentclass[aspectratio=169]{beamer}
+%%   \usetheme{GMT}
+%%
+%% Options:
+%%   [titleimage=<path>]  Override the title slide background image
+%%   [mainimage=<path>]   Override the regular slide background image
+%%
+%% The two background JPEGs must be on the LaTeX search path:
+%%   GMT-bg-main.jpg   – regular slide template (navy header + white body)
+%%   GMT-bg-title.jpg  – title slide background (GMT telescope photograph)
+%%
+%% Fonts: Helvetica/Arial equivalent via \usepackage{helvet}.
+%% For exact Arial matching compile with XeLaTeX + fontspec and
+%% uncomment the fontspec block at the bottom of this file.
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{beamerthemeGMT}[2024/01/01 GMT Beamer Theme]
+
+\mode<presentation>
+
+% -----------------------------------------------------------------------
+%  Package dependencies
+% -----------------------------------------------------------------------
+\RequirePackage{tikz}
+\RequirePackage{graphicx}
+\RequirePackage{xkeyval}
+\RequirePackage{helvet}          % Helvetica ≈ Arial
+\RequirePackage[T1]{fontenc}
+\RequirePackage{microtype}
+
+\renewcommand{\familydefault}{\sfdefault}
+
+% -----------------------------------------------------------------------
+%  Theme options
+% -----------------------------------------------------------------------
+\newcommand{\GMT@mainimage}{GMT-bg-main}
+\newcommand{\GMT@titleimage}{GMT-bg-title}
+
+\DeclareOptionBeamer{mainimage}{\renewcommand{\GMT@mainimage}{#1}}
+\DeclareOptionBeamer{titleimage}{\renewcommand{\GMT@titleimage}{#1}}
+\ProcessOptionsBeamer
+
+% -----------------------------------------------------------------------
+%  GMT colour palette  (from theme1.xml / GMT Color Scheme 1)
+% -----------------------------------------------------------------------
+\definecolor{GMTnavy}{HTML}{004181}         % accent1 – primary brand blue
+\definecolor{GMTdark}{HTML}{1E1D21}         % dk1
+\definecolor{GMTlightblue}{HTML}{4491CC}    % accent2
+\definecolor{GMTpurple}{HTML}{533768}       % accent3
+\definecolor{GMTyellow}{HTML}{FFD900}       % accent4
+\definecolor{GMTorange}{HTML}{F3761D}       % accent5
+\definecolor{GMTred}{HTML}{CC1919}          % accent6
+\definecolor{GMTgrey}{HTML}{66717E}         % dk2
+\definecolor{GMTlightgrey}{HTML}{E8E7ED}    % lt2  – used for title text on dark bg
+\definecolor{GMTbodytext}{HTML}{28282D}     % body text colour from slide master
+
+% Convenience aliases
+\colorlet{GMTbrand}{GMTnavy}
+\colorlet{GMTaccent}{GMTlightblue}
+
+% -----------------------------------------------------------------------
+%  Beamer colour assignments
+% -----------------------------------------------------------------------
+\setbeamercolor{normal text}{fg=GMTbodytext, bg=white}
+\setbeamercolor{frametitle}{fg=GMTlightgrey, bg={}}
+\setbeamercolor{framesubtitle}{fg=GMTlightgrey!80, bg={}}
+\setbeamercolor{title}{fg=GMTlightgrey}
+\setbeamercolor{subtitle}{fg=GMTlightgrey!90}
+\setbeamercolor{author}{fg=white}
+\setbeamercolor{institute}{fg=GMTlightgrey!80}
+\setbeamercolor{date}{fg=GMTlightgrey!80}
+
+% Items: bullet in navy, text in body colour
+\setbeamercolor{item}{fg=GMTnavy}
+\setbeamercolor{subitem}{fg=GMTgrey}
+\setbeamercolor{subsubitem}{fg=GMTgrey}
+\setbeamercolor{itemize item}{fg=GMTnavy}
+\setbeamercolor{itemize subitem}{fg=GMTgrey}
+\setbeamercolor{itemize subsubitem}{fg=GMTgrey}
+
+% Blocks
+\setbeamercolor{block title}{fg=white, bg=GMTnavy}
+\setbeamercolor{block body}{fg=GMTbodytext, bg=GMTlightgrey!30}
+\setbeamercolor{block title alerted}{fg=white, bg=GMTorange}
+\setbeamercolor{block body alerted}{fg=GMTbodytext, bg=GMTorange!10}
+\setbeamercolor{block title example}{fg=white, bg=GMTlightblue}
+\setbeamercolor{block body example}{fg=GMTbodytext, bg=GMTlightblue!10}
+
+% Alerts / examples
+\setbeamercolor{alerted text}{fg=GMTorange}
+\setbeamercolor{example text}{fg=GMTlightblue}
+
+% Footer
+\setbeamercolor{footline}{fg=GMTnavy, bg={}}
+
+% Separator line below header area (thin rule drawn by outer template)
+\setbeamercolor{headline}{fg=GMTnavy, bg={}}
+
+% Table of contents
+\setbeamercolor{section in toc}{fg=GMTnavy}
+\setbeamercolor{subsection in toc}{fg=GMTgrey}
+
+% -----------------------------------------------------------------------
+%  Font assignments
+% -----------------------------------------------------------------------
+% Scale relative to Beamer's base (11 pt).
+% PPTX sizes scaled from 13.33"-wide slide → 160 mm frame (×0.472):
+%   title 28 pt → 13 pt,  body 20 pt → 9.5 pt → use 10 pt
+\setbeamerfont{frametitle}{size=\fontsize{14}{17}\selectfont, series=\bfseries}
+\setbeamerfont{framesubtitle}{size=\fontsize{10}{13}\selectfont, series=\mdseries}
+\setbeamerfont{title}{size=\fontsize{18}{22}\selectfont, series=\bfseries}
+\setbeamerfont{subtitle}{size=\fontsize{11}{14}\selectfont, series=\bfseries}
+\setbeamerfont{author}{size=\fontsize{11}{14}\selectfont, series=\bfseries}
+\setbeamerfont{institute}{size=\fontsize{9}{11}\selectfont, series=\mdseries}
+\setbeamerfont{date}{size=\fontsize{9}{11}\selectfont}
+\setbeamerfont{footline}{size=\fontsize{5.5}{7}\selectfont, series=\bfseries}
+\setbeamerfont{itemize/enumerate body}{size=\fontsize{10}{13}\selectfont}
+\setbeamerfont{itemize/enumerate subbody}{size=\fontsize{9}{11}\selectfont}
+\setbeamerfont{itemize/enumerate subsubbody}{size=\fontsize{8}{10}\selectfont}
+\setbeamerfont{block title}{size=\fontsize{10}{13}\selectfont, series=\bfseries}
+\setbeamerfont{block body}{size=\fontsize{9}{12}\selectfont}
+\setbeamerfont{section in toc}{size=\fontsize{10}{13}\selectfont, series=\bfseries}
+\setbeamerfont{subsection in toc}{size=\fontsize{9}{11}\selectfont}
+
+% -----------------------------------------------------------------------
+%  Slide dimensions  (must match \documentclass[aspectratio=169]{beamer})
+% -----------------------------------------------------------------------
+% Beamer 16:9 canvas: 160 mm × 90 mm
+%
+% PPTX layout analysis (EMU → mm, slide 12192000 × 6858000 EMU):
+%   Header band:    top 0 → 1092499 EMU = 0 → 14.3 mm
+%   Content area:  1409699 → 6351372 EMU = 18.5 → 83.4 mm  (left/right 6 mm)
+%   Footer strip:  6586855 EMU = 86.5 mm from top (3.5 mm tall)
+%   Logo right-margin: 1965960 EMU ≈ 25.8 mm → title text stops 26 mm from right edge
+
+\newlength{\GMT@headerH}    \setlength{\GMT@headerH}{14.3mm}
+\newlength{\GMT@contentTop} \setlength{\GMT@contentTop}{18.5mm}
+\newlength{\GMT@footerH}    \setlength{\GMT@footerH}{4.5mm}
+\newlength{\GMT@marginL}    \setlength{\GMT@marginL}{6mm}
+\newlength{\GMT@marginR}    \setlength{\GMT@marginR}{6mm}
+\newlength{\GMT@logoGutter} \setlength{\GMT@logoGutter}{26mm}   % reserved for logo
+
+\setbeamersize{text margin left=\GMT@marginL, text margin right=\GMT@marginR}
+
+% -----------------------------------------------------------------------
+%  Remove navigation symbols
+% -----------------------------------------------------------------------
+\setbeamertemplate{navigation symbols}{}
+
+% -----------------------------------------------------------------------
+%  Bullet style  (round, colour-coded by level)
+% -----------------------------------------------------------------------
+\setbeamertemplate{itemize item}{%
+  \tikz[baseline=-0.6ex]\fill[GMTnavy] circle (1.8pt);}
+\setbeamertemplate{itemize subitem}{%
+  \tikz[baseline=-0.6ex]\fill[GMTgrey] circle (1.4pt);}
+\setbeamertemplate{itemize subsubitem}{%
+  \tikz[baseline=-0.6ex]\fill[GMTgrey!60] circle (1.1pt);}
+
+% -----------------------------------------------------------------------
+%  Background template
+%  – frame 1 (title page) gets GMT-bg-title.jpg
+%  – all other frames get GMT-bg-main.jpg
+% -----------------------------------------------------------------------
+\newif\ifGMT@titleframe
+\GMT@titleframefalse
+
+\setbeamertemplate{background}{%
+  \ifGMT@titleframe
+    \includegraphics[width=\paperwidth,height=\paperheight]{\GMT@titleimage}%
+  \else
+    \includegraphics[width=\paperwidth,height=\paperheight]{\GMT@mainimage}%
+  \fi
+}
+
+% Public hook: \GMTtitleframe  / \GMTmainframe
+\newcommand{\GMTtitleframe}{\GMT@titleframetrue}
+\newcommand{\GMTmainframe}{\GMT@titleframefalse}
+
+% -----------------------------------------------------------------------
+%  Headline  (reserves vertical space so text body starts below the header)
+% -----------------------------------------------------------------------
+\setbeamertemplate{headline}{%
+  % Reserve the header height so the text body starts below the image header.
+  % The actual title text is drawn by the frametitle template using TikZ
+  % absolute positioning so it lands correctly over the dark banner.
+  \vspace{\GMT@contentTop}%
+}
+
+% -----------------------------------------------------------------------
+%  Frame title  (absolute-positioned with TikZ, bottom-aligned in header)
+% -----------------------------------------------------------------------
+\setbeamertemplate{frametitle}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    % Main title – bottom of text sits at \GMT@headerH from top of page
+    \node[anchor=south west,
+          text=GMTlightgrey,
+          font=\usebeamerfont{frametitle},
+          text width=\dimexpr\paperwidth-\GMT@marginL-\GMT@logoGutter\relax,
+          align=left,
+          inner sep=0pt]
+      at ([xshift=\GMT@marginL, yshift=-\GMT@headerH] current page.north west) {%
+        \insertframetitle
+      };
+    % Optional frame subtitle – rendered in the white zone just below the header
+    % band, in navy so it reads clearly against the white background.
+    \ifx\insertframesubtitle\@empty\else
+      \node[anchor=north west,
+            text=GMTnavy,
+            font=\usebeamerfont{framesubtitle},
+            text width=\dimexpr\paperwidth-\GMT@marginL-\GMT@logoGutter\relax,
+            align=left,
+            inner sep=0pt]
+        at ([xshift=\GMT@marginL, yshift=-\GMT@contentTop+3mm] current page.north west) {%
+          \insertframesubtitle
+        };
+    \fi
+  \end{tikzpicture}%
+}
+
+% -----------------------------------------------------------------------
+%  Footline  (date | short title | page / total)
+% -----------------------------------------------------------------------
+\setbeamertemplate{footline}{%
+  \usebeamerfont{footline}%
+  \usebeamercolor[fg]{footline}%
+  \begin{beamercolorbox}[
+      wd=\paperwidth,
+      ht=2.5mm,
+      dp=1.5mm,
+      leftskip=\GMT@marginL,
+      rightskip=\GMT@marginR]{footline}%
+    % Left: short author  ·  date
+    \insertshortauthor
+    \ifx\insertshortauthor\@empty\else
+      \ifx\insertshortdate\@empty\else\enspace\textbullet\enspace\fi
+    \fi
+    \insertshortdate
+    \hfill
+    % Centre: short title (use optional [short title] arg to \title{})
+    \insertshorttitle
+    \hfill
+    % Right: slide number / total
+    \insertframenumber\,/\,\inserttotalframenumber\kern2pt
+  \end{beamercolorbox}%
+}
+
+% -----------------------------------------------------------------------
+%  Title page
+%  Replicates the PPTX layout:
+%    title block – right half, starting at 81 mm from left, 22 mm from top
+%    author      – right side, at 96 mm from left, 53 mm from top
+%    institute   – right side, at 96 mm from left, 59 mm from top
+%    date        – right side, at 96 mm from left, 64 mm from top
+% -----------------------------------------------------------------------
+\defbeamertemplate*{title page}{GMT}[1][]{%
+  \begin{tikzpicture}[remember picture, overlay]
+    %% ---- Title ----
+    \node[anchor=north west,
+          text=GMTlightgrey,
+          font=\usebeamerfont{title},
+          text width=71mm,
+          align=left,
+          inner sep=0pt]
+      at ([xshift=81mm, yshift=-22mm] current page.north west)
+      {\inserttitle};
+
+    %% ---- Subtitle ----
+    \ifx\insertsubtitle\@empty\else
+      \node[anchor=north west,
+            text=GMTlightgrey!90,
+            font=\usebeamerfont{subtitle},
+            text width=71mm,
+            align=left,
+            inner sep=0pt]
+        at ([xshift=81mm, yshift=-44mm] current page.north west)
+        {\insertsubtitle};
+    \fi
+
+    %% ---- Author ----
+    \node[anchor=north west,
+          text=white,
+          font=\usebeamerfont{author},
+          align=left,
+          inner sep=0pt]
+      at ([xshift=81mm, yshift=-53mm] current page.north west)
+      {\insertauthor};
+
+    %% ---- Institute ----
+    \ifx\insertinstitute\@empty\else
+      \node[anchor=north west,
+            text=GMTlightgrey!80,
+            font=\usebeamerfont{institute},
+            align=left,
+            inner sep=0pt]
+        at ([xshift=81mm, yshift=-59mm] current page.north west)
+        {\insertinstitute};
+    \fi
+
+    %% ---- Date ----
+    \ifx\insertdate\@empty\else
+      \node[anchor=north west,
+            text=GMTlightgrey!70,
+            font=\usebeamerfont{date},
+            align=left,
+            inner sep=0pt]
+        at ([xshift=81mm, yshift=-65mm] current page.north west)
+        {\insertdate};
+    \fi
+  \end{tikzpicture}%
+}
+
+% -----------------------------------------------------------------------
+%  Section title slide  (uses main background + large section name)
+% -----------------------------------------------------------------------
+\newcommand{\GMTsectionframe}{%
+  \begin{frame}[plain, noframenumbering]
+    \begin{tikzpicture}[remember picture, overlay]
+      % Semi-transparent navy overlay on content area
+      \fill[GMTnavy, opacity=0.07]
+        ([xshift=0pt, yshift=-\GMT@contentTop] current page.north west)
+        rectangle (current page.south east);
+      % Section title centred in content area
+      \node[anchor=center,
+            text=GMTnavy,
+            font=\bfseries\fontsize{22}{26}\selectfont,
+            text width=140mm,
+            align=center]
+        at ([yshift=\dimexpr-\GMT@contentTop/2-10mm\relax] current page.center)
+        {\thesection.~\insertsectionhead};
+    \end{tikzpicture}
+  \end{frame}
+}
+
+% -----------------------------------------------------------------------
+%  Convenience: \titleframe command
+%  Switches to title background, inserts the title page, then resets.
+% -----------------------------------------------------------------------
+\newcommand{\titleframe}{%
+  \GMT@titleframetrue
+  \begin{frame}[plain, noframenumbering]
+    \titlepage
+  \end{frame}
+  \GMT@titleframefalse
+}
+
+% -----------------------------------------------------------------------
+%  Block environments  (rounded corners, thin navy top border)
+% -----------------------------------------------------------------------
+\setbeamertemplate{block begin}{%
+  \vskip2pt
+  \begin{beamercolorbox}[
+      wd=\textwidth,
+      ht=5mm, dp=0.5mm,
+      leftskip=4pt, rightskip=4pt]{block title}
+    \usebeamerfont{block title}\insertblocktitle
+  \end{beamercolorbox}%
+  \nointerlineskip
+  \begin{beamercolorbox}[
+      wd=\textwidth,
+      leftskip=4pt, rightskip=4pt,
+      sep=4pt]{block body}%
+    \usebeamerfont{block body}%
+}
+\setbeamertemplate{block end}{%
+  \end{beamercolorbox}%
+  \vskip2pt
+}
+
+\setbeamertemplate{block alerted begin}{%
+  \vskip2pt
+  \begin{beamercolorbox}[
+      wd=\textwidth,
+      ht=5mm, dp=0.5mm,
+      leftskip=4pt, rightskip=4pt]{block title alerted}
+    \usebeamerfont{block title}\insertblocktitle
+  \end{beamercolorbox}%
+  \nointerlineskip
+  \begin{beamercolorbox}[
+      wd=\textwidth,
+      leftskip=4pt, rightskip=4pt,
+      sep=4pt]{block body alerted}%
+    \usebeamerfont{block body}%
+}
+\setbeamertemplate{block alerted end}{%
+  \end{beamercolorbox}%
+  \vskip2pt
+}
+
+\setbeamertemplate{block example begin}{%
+  \vskip2pt
+  \begin{beamercolorbox}[
+      wd=\textwidth,
+      ht=5mm, dp=0.5mm,
+      leftskip=4pt, rightskip=4pt]{block title example}
+    \usebeamerfont{block title}\insertblocktitle
+  \end{beamercolorbox}%
+  \nointerlineskip
+  \begin{beamercolorbox}[
+      wd=\textwidth,
+      leftskip=4pt, rightskip=4pt,
+      sep=4pt]{block body example}%
+    \usebeamerfont{block body}%
+}
+\setbeamertemplate{block example end}{%
+  \end{beamercolorbox}%
+  \vskip2pt
+}
+
+% -----------------------------------------------------------------------
+%  XeLaTeX / LuaLaTeX font override – uncomment for exact Arial matching
+% -----------------------------------------------------------------------
+%\@ifpackageloaded{fontspec}{%
+%  \setsansfont{Arial}[
+%    BoldFont    = Arial Bold,
+%    ItalicFont  = Arial Italic,
+%    BoldItalicFont = Arial Bold Italic,
+%    Scale       = MatchLowercase,
+%  ]%
+%  \renewcommand{\familydefault}{\sfdefault}%
+%}{}
+
+\mode<all>
