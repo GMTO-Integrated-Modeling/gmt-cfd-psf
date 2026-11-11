@@ -151,7 +151,7 @@ def cumulative_std(x):
     return f, np.sqrt(cumulative_trapezoid(p, f, initial=0))
 
 segment_grid(pair, "PSD [nm²/Hz]", "damping_psd.pdf", positive_psd, (0.06, FMAX))
-segment_grid(pair, "std below f [nm]", "damping_cumstd.pdf", cumulative_std, (10, FMAX), logy=False, zoom=True)
+segment_grid(pair, "std below f [nm]", "damping_cumstd.pdf", cumulative_std, (1, FMAX), logy=False, zoom=True)
 print("damping table: segment, std 2 %, std 1 %, 3-153 Hz 2 %, 3-153 Hz 1 %, 0-1 Hz 2 %, 0-1 Hz 1 %")
 for i in range(7):
     s = f"S{i + 1}"
