@@ -422,7 +422,7 @@
 %------------------------------------------------------------------------------
 \begin{frame}{Data: segment piston of the 63 CFD cases}
   \footnotesize
-  Public links, valid until \alert{25 December 2026} (open-loop and FSM piston, \SI{395}{s} at \SI{1}{kHz}, Parquet, \SI{\sim 27}{MB} each):
+  Public links, valid until \alert{25 December 2026}: open-loop and FSM piston, \SI{395}{s} at \SI{1}{kHz}, one Parquet file per case of typically \alert{\SI{28}{MB}} (\SI{13}{MB} at \SI{0}{m/s}), \SI{1.7}{GB} for the 63 cases
   \vspace{1mm}
 
   \colorbox{soft}{\parbox{\dimexpr\linewidth-2\fboxsep}{\scriptsize\ttfamily
@@ -469,7 +469,7 @@
   \lstinputlisting{example.py}
 
   \scriptsize
-  Anonymous S3 API (\texttt{s3fs}) or HTTPS with the \alert{path-style} URL: the dots of the bucket name break the TLS certificate of \texttt{https://gmto.cfd.2025.s3...}. Only the 63 \texttt{segment\_piston.parquet} files are public; the bucket cannot be listed.
+  Plain HTTPS download, no AWS account or S3 library needed. Use the \alert{path-style} URL: the dots of the bucket name break the TLS certificate of \texttt{https://gmto.cfd.2025.s3...}. Only the 63 \texttt{segment\_piston.parquet} files are public; the bucket cannot be listed.
 \end{frame}
 
 \end{document}
