@@ -89,7 +89,7 @@
     \draw[flow] (rbm) -- (lom);
     \draw[flow] (lom) -- (out);
     \draw[flow] (rbm.south) |- (fsm.west);
-    \draw[flow] (fsm.east) -| (out.south);
+    \draw[flow] (fsm) -- (lom);
     \node[draw=accent,dashed,rounded corners,fit=(fem)(ctrl)(rbm),inner sep=3mm,
       label={[accent,font=\footnotesize]above:stage 1 \texttt{windloads} (hours per case)}] {};
     \node[draw=warm,dashed,rounded corners,fit=(lom)(out)(fsm),inner sep=3mm,
