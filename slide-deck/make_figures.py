@@ -16,8 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.io as sio
-from scipy.integrate import cumulative_trapezoid
-from scipy.signal import csd, welch
+from scipy.signal import csd, periodogram, welch
 
 DATA, FEM = Path(sys.argv[1]), Path(sys.argv[2])
 OUT = Path(__file__).parent / "figures"
@@ -147,8 +146,11 @@ def positive_psd(x):
     return f[m], p[m]
 
 def cumulative_std(x):
-    f, p = positive_psd(x)
-    return f, np.sqrt(cumulative_trapezoid(p, f, initial=0))
+    # periodogram of the whole record (0.0025 Hz resolution): its sum is the variance of the time series,
+    # whereas the Welch PSD misses the drift slower than its 0.06 Hz resolution
+    f, p = periodogram(x * 1e9, fs=FS)
+    m = f <= FMAX
+    return f[m], np.sqrt(np.cumsum(p[m]) * f[1])
 
 segment_grid(pair, "PSD [nm²/Hz]", "damping_psd.pdf", positive_psd, (0.06, FMAX))
 segment_grid(pair, "std below f [nm]", "damping_cumstd.pdf", cumulative_std, (1, FMAX), logy=False, zoom=True)
@@ -157,6 +159,9 @@ for i in range(7):
     s = f"S{i + 1}"
     print(s, *(f"{v:.1f}" for v in (p2[s].std() * 1e9, p1[s].std() * 1e9, band(p2[s], 3, FMAX), band(p1[s], 3, FMAX),
                                     band(p2[s], 0, 1), band(p1[s], 0, 1))))
+for i in range(7):
+    s = f"S{i + 1}"
+    print(s, "std / cumulative std at 153 Hz:", *(f"{x[s].std() * 1e9:.1f}/{cumulative_std(x[s])[1][-1]:.1f}" for x in (p2, p1)))
 print("FSM 1 %:", [round(p1[f"S{i + 1}_FSM"].std() * 1e9, 1) for i in range(7)])
 
 # 63 cases
