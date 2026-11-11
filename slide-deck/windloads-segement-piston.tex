@@ -5,6 +5,7 @@
 \usetheme{GMT}
 \usepackage{booktabs}
 \usepackage{siunitx}
+\usepackage{listings}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,calc}
 \sisetup{group-separator={,},group-minimum-digits=4}
@@ -16,6 +17,14 @@
 \definecolor{soft}{HTML}{EEF1F5}
 \colorlet{softblue}{GMTlightblue!20}
 \colorlet{softwarm}{GMTorange!15}
+
+% public link to the segment piston of a CFD case, see the data slide
+\newcommand{\caselink}[2]{\href{https://s3.us-east-1.amazonaws.com/gmto.cfd.2025/FEM/20251110_1617_zen_30_M1_202110_FSM_202305_Mount_202305_pier_202411_M1Fans_M1S1_150Hz/zeta_1pc/cfd/#1/segment_piston.parquet}{\textcolor{GMTlightblue}{\underline{#2}}}}
+
+\lstset{language=Python,basicstyle=\ttfamily\scriptsize,keywordstyle=\color{GMTnavy}\bfseries,
+  stringstyle=\color{GMTorange!85!black},commentstyle=\color{GMTgrey}\itshape,showstringspaces=false,
+  columns=fullflexible,keepspaces=true,frame=single,rulecolor=\color{GMTlightgrey},backgroundcolor=\color{soft},
+  xleftmargin=2pt,xrightmargin=2pt,aboveskip=2pt,belowskip=2pt}
 
 \tikzset{
   box/.style={draw=none,fill=#1,rounded corners=3pt,align=center,inner sep=5pt,font=\small,minimum height=1.1cm},
@@ -408,6 +417,59 @@
       {\footnotesize Damping sensitivity from one CFD case only.}
     \end{column}
   \end{columns}
+\end{frame}
+
+%------------------------------------------------------------------------------
+\begin{frame}{Data: segment piston of the 63 CFD cases}
+  \footnotesize
+  Public links, valid until \alert{25 December 2026} (open-loop and FSM piston, \SI{395}{s} at \SI{1}{kHz}, Parquet, \SI{\sim 27}{MB} each):
+  \vspace{1mm}
+
+  \colorbox{soft}{\parbox{\dimexpr\linewidth-2\fboxsep}{\scriptsize\ttfamily
+    https://s3.us-east-1.amazonaws.com/gmto.cfd.2025/FEM/\alert{<FEM>}/zeta\_1pc/cfd/\alert{<case>}/segment\_piston.parquet\\[0.5mm]
+    \normalfont <FEM> = \texttt{20251110\_1617\_zen\_30\_M1\_202110\_FSM\_202305\_Mount\_202305\_pier\_202411\_M1Fans\_M1S1\_150Hz}}}
+  \vspace{1mm}
+
+  \begin{columns}[T]
+    \begin{column}{0.4\textwidth}
+      \scriptsize
+      \textbf{<case>} = \texttt{zen\alert{ZZ}az\alert{AAA}\_\alert{EE}\_\alert{V}ms}
+      \begin{description}\setlength{\itemsep}{0pt}
+        \item[ZZ] zenith angle: 00, 30, 60
+        \item[AAA] azimuth to the wind: 000 to 180
+        \item[EE] enclosure: OS, CD, CS
+        \item[V] wind speed: 0, 2, 7, 12, 17
+      \end{description}
+      \textbf{Columns}: \texttt{time} [s], \texttt{S1}..\texttt{S7} open loop, \texttt{S1\_FSM}..\texttt{S7\_FSM} with the FSM, piston in [m], mean not removed
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \scriptsize
+      Click a wind speed [m/s] to download the case:
+      \vspace{0.5mm}
+
+      \setlength{\tabcolsep}{2.2pt}
+      \begin{tabular}{@{}r|ccccc|ccccc|ccccc@{}}
+        \toprule
+        & \multicolumn{5}{c|}{zenith \ang{0}} & \multicolumn{5}{c|}{zenith \ang{30}} & \multicolumn{5}{c}{zenith \ang{60}}\\
+        azimuth & \multicolumn{3}{c}{OS} & \multicolumn{2}{c|}{CD} & \multicolumn{3}{c}{OS} & \multicolumn{2}{c|}{CD} & \multicolumn{3}{c}{OS} & \multicolumn{2}{c}{CS}\\
+        \midrule
+    \ang{0} & \caselink{zen00az000_OS_0ms}{0} & \caselink{zen00az000_OS_2ms}{2} & \caselink{zen00az000_OS_7ms}{7} & \caselink{zen00az000_CD_12ms}{12} & \caselink{zen00az000_CD_17ms}{17} & \caselink{zen30az000_OS_0ms}{0} & \caselink{zen30az000_OS_2ms}{2} & \caselink{zen30az000_OS_7ms}{7} & \caselink{zen30az000_CD_12ms}{12} & \caselink{zen30az000_CD_17ms}{17} & \caselink{zen60az000_OS_0ms}{0} & \caselink{zen60az000_OS_2ms}{2} & \caselink{zen60az000_OS_7ms}{7} & \caselink{zen60az000_CS_12ms}{12} & \caselink{zen60az000_CS_17ms}{17} \\
+    \ang{45} &  & \caselink{zen00az045_OS_2ms}{2} & \caselink{zen00az045_OS_7ms}{7} & \caselink{zen00az045_CD_12ms}{12} & \caselink{zen00az045_CD_17ms}{17} &  & \caselink{zen30az045_OS_2ms}{2} & \caselink{zen30az045_OS_7ms}{7} & \caselink{zen30az045_CD_12ms}{12} & \caselink{zen30az045_CD_17ms}{17} &  & \caselink{zen60az045_OS_2ms}{2} & \caselink{zen60az045_OS_7ms}{7} & \caselink{zen60az045_CS_12ms}{12} & \caselink{zen60az045_CS_17ms}{17} \\
+    \ang{90} &  & \caselink{zen00az090_OS_2ms}{2} & \caselink{zen00az090_OS_7ms}{7} & \caselink{zen00az090_CD_12ms}{12} & \caselink{zen00az090_CD_17ms}{17} &  & \caselink{zen30az090_OS_2ms}{2} & \caselink{zen30az090_OS_7ms}{7} & \caselink{zen30az090_CD_12ms}{12} & \caselink{zen30az090_CD_17ms}{17} &  & \caselink{zen60az090_OS_2ms}{2} & \caselink{zen60az090_OS_7ms}{7} & \caselink{zen60az090_CS_12ms}{12} & \caselink{zen60az090_CS_17ms}{17} \\
+    \ang{135} &  & \caselink{zen00az135_OS_2ms}{2} & \caselink{zen00az135_OS_7ms}{7} & \caselink{zen00az135_CD_12ms}{12} & \caselink{zen00az135_CD_17ms}{17} &  & \caselink{zen30az135_OS_2ms}{2} & \caselink{zen30az135_OS_7ms}{7} & \caselink{zen30az135_CD_12ms}{12} & \caselink{zen30az135_CD_17ms}{17} &  & \caselink{zen60az135_OS_2ms}{2} & \caselink{zen60az135_OS_7ms}{7} & \caselink{zen60az135_CS_12ms}{12} & \caselink{zen60az135_CS_17ms}{17} \\
+    \ang{180} &  & \caselink{zen00az180_OS_2ms}{2} & \caselink{zen00az180_OS_7ms}{7} & \caselink{zen00az180_CD_12ms}{12} & \caselink{zen00az180_CD_17ms}{17} &  & \caselink{zen30az180_OS_2ms}{2} & \caselink{zen30az180_OS_7ms}{7} & \caselink{zen30az180_CD_12ms}{12} & \caselink{zen30az180_CD_17ms}{17} &  & \caselink{zen60az180_OS_2ms}{2} & \caselink{zen60az180_OS_7ms}{7} & \caselink{zen60az180_CS_12ms}{12} & \caselink{zen60az180_CS_17ms}{17} \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+%------------------------------------------------------------------------------
+\begin{frame}[fragile]{Data: loading a case in Python}
+  \lstinputlisting{example.py}
+
+  \scriptsize
+  Anonymous S3 API (\texttt{s3fs}) or HTTPS with the \alert{path-style} URL: the dots of the bucket name break the TLS certificate of \texttt{https://gmto.cfd.2025.s3...}. Only the 63 \texttt{segment\_piston.parquet} files are public; the bucket cannot be listed.
 \end{frame}
 
 \end{document}
