@@ -257,35 +257,6 @@
 \end{frame}
 
 %------------------------------------------------------------------------------
-\begin{frame}{Validation}
-  \begin{columns}[T]
-    \begin{column}{0.5\textwidth}
-      \textbf{Stage 1}: rerun of the 2025 baseline (previous FEM, \SI{2}{\%} damping, zen30az000\_OS\_7ms)
-      \vspace{1mm}
-
-      \small
-      \begin{tabular}{@{}lrrr@{}}
-        \toprule
-        Piston std [nm] & 2025 & rerun & change\\
-        \midrule
-        S1--S6 & 578--810 & 578--809 & ${\le}\,0.2\,\%$\\
-        S7 & 267.3 & 262.6 & $-1.8\,\%$\\
-        \bottomrule
-      \end{tabular}
-
-      \vspace{1mm}
-      RBM differences: \SI{1.6}{\%} of the RBM std (median), attributed to newer servo-mechanism libraries
-    \end{column}
-    \begin{column}{0.46\textwidth}
-      \textbf{Stage 2}: the FSM loop, ported from the 2025 processing, gives \alert{sample-for-sample identical} RBMs
-      \vspace{3mm}
-
-      \textbf{Consequence}: trade studies are compared with reruns made with the same software, so only the changed parameter differs
-    \end{column}
-  \end{columns}
-\end{frame}
-
-%------------------------------------------------------------------------------
 \section{Sensitivity to the damping}
 
 \begin{frame}{M1 fans FEM: \SI{2}{\%} against \SI{1}{\%} damping}
@@ -417,7 +388,7 @@
       \begin{block}{Pipeline}
         \begin{itemize}
           \item CFD loads $\rightarrow$ FEM + servo-mechanisms $\rightarrow$ RBMs $\rightarrow$ LOM piston, open loop and with the FSM
-          \item Reproducible trade studies on AWS Batch, validated against the 2025 baseline
+          \item Reproducible trade studies on AWS Batch
         \end{itemize}
       \end{block}
       \begin{block}{Damping (M1 fans FEM)}
