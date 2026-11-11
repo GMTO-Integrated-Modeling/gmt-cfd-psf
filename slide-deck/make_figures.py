@@ -198,8 +198,16 @@ for ax, outer, title in zip(axes, (True, False), ("outer segments S1–S6", "cen
     for z, color, dx in ((0, BLUE, -0.25), (30, ORANGE, 0), (60, PURPLE, 0.25)):
         s = d[(d.zen == z) & (d.outer == outer)].groupby("ws")["std"]
         ws = np.array(s.mean().index)
+        # std = a v² fitted in log space to the open vents cases with wind (2 and 7 m/s)
+        os_ = d[(d.zen == z) & (d.outer == outer) & (d.cfg == "OS") & (d.ws > 0)].groupby("ws")["std"].mean()
+        coef = np.exp(np.mean(np.log(os_.values) - 2 * np.log(os_.index.values)))
+        print(f"{'S1-S6' if outer else 'S7'} zenith {z}: a = {coef:.2f} nm/(m/s)², fit/data at 2 and 7 m/s:",
+              (coef * os_.index.values**2 / os_.values).round(2))
         ax.errorbar(ws + dx, s.mean(), yerr=[s.mean() - s.min(), s.max() - s.mean()], color=color, marker="o",
-                    ms=5, lw=1.5, capsize=3, label=f"zenith {z}°")
+                    ms=5, lw=1.5, capsize=3, label=f"zenith {z}°, a = {coef:.1f}")
+        v = np.linspace(1, 17, 100)
+        ax.plot(v, coef * v**2, color=color, lw=1, ls="--")
+    ax.plot([], [], color=MUTED, lw=1, ls="--", label="a v², fit to open vents")
     ax.set_yscale("log")
     ax.set_xticks([0, 2, 7, 12, 17])
     ax.axvspan(9.5, 18.5, color=GRID, alpha=0.5, lw=0)
@@ -210,7 +218,8 @@ for ax, outer, title in zip(axes, (True, False), ("outer segments S1–S6", "cen
     ax.set_title(title, loc="left", fontsize=11)
     ax.set_xlabel("wind speed [m/s]")
 axes[0].set_ylabel("open-loop piston std [nm]")
-axes[0].legend(loc="upper left")
+for ax in axes:
+    ax.legend(loc="upper left", fontsize=8, title="a [nm/(m/s)²]", title_fontsize=8, alignment="left")
 fig.savefig(OUT / "std_vs_wind.pdf")
 plt.close(fig)
 
